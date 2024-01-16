@@ -1,0 +1,167 @@
+/* Mix up colors, set additional defaults. */
+:root {
+    --layer-mix: color-mix(in srgb, var(--accent-color) 10%, var(--layer));
+
+    --max-with: 1200px;
+    --container-padding: 8pt;
+
+    font-size: var(--font-size);
+}
+
+* {
+    /* Reset layout */
+    padding: 0;
+    margin: 0;
+    border: 0;
+    /* Use 'inner' size of elements (=after padding) for relativ sizes.  */
+    box-sizing: border-box;
+}
+
+/* Default text setup */
+body {
+    background: var(--background-color);
+    color: var(--text-color);
+    font-family: var(--font);
+}
+
+/* Link colors. */
+a {
+    color: var(--accent-color);
+}
+a:active, a:hover {
+    text-decoration: none;
+}
+
+/* All "container" elements have the same padding. */
+nav, main, .container, .inline-container {
+    padding: var(--container-padding);
+    width: 100%;
+}
+
+/* Layered containers inherit colors and use the maximum available size. */
+main, .container {
+    background: var(--layer-mix);
+}
+
+/* The maximum width is limited. */
+.limit {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/****************************************************************************/
+
+/* The navigation bar sits on top, with the user details on the right */
+nav {
+    background: var(--accent-color);
+    color: var(--on-accent-color);
+
+    --size: calc(var(--font-size) * 2);
+}
+
+nav a {
+    color: var(--on-accent-color);
+}
+
+#userinfo {
+    float: right;
+}
+
+#userinfo, #userinfo * {
+    height: calc(var(--size) * 1.5);
+}
+
+#userinfo p, nav p  {
+    display: inline-block;
+    font-size: calc(var(--size) / 2);
+    line-height: calc(var(--size) / 2);
+}
+
+nav h1 {
+    font-size: var(--size);
+    line-height: var(--size);
+}
+
+#userinfo img {
+    background: gray;
+    border-radius: calc(var(--size) * 1.5) ;
+    margin-left: var(--container-padding);
+}
+
+/****************************************************************************/
+
+/*Hide the messages container by default*/
+#messages:empty {
+    display: none;
+}
+
+/****************************************************************************/
+
+button, input[type=button], input[type=submit], .button {
+    text-decoration: none;
+    padding: 0 var(--font-size);
+    height: calc(var(--font-size) * 2.5);
+    border-radius: calc(var(--font-size) * 2.5);
+    font-size: var(--font-size);
+
+    background: var(--accent-color);
+    color: var(--on-accent-color);
+    border: solid 1pt var(--accent-color);
+}
+
+button:active, input[type=button]:active, input[type=submit]:active, .button:active,
+button:hover, input[type=button]:hover, input[type=submit]:hover, .button:hover {
+    background: var(--on-accent-color);
+    color: var(--accent-color);
+    border: solid 1pt var(--accent-color);
+}
+
+input {
+    font-size: var(--font-size);
+    padding: calc(var(--font-size) * .5);
+    display: block;
+    width: 100%;
+}
+input[type=checkbox] {
+    display: inline-block;
+    width: auto;
+}
+
+/****************************************************************************/
+/* Styling the messages. */
+.message {
+    display: flex;
+    align-items: center;
+    margin: calc(var(--container-padding)) 0;
+}
+.message .dismiss {
+
+}
+.message .content {
+    flex-grow: 1;
+}
+
+.device-password {
+    font-family: var(--font-devicepassword);
+    user-select: contain;
+}
+
+.copy-password {
+    user-select: none;
+    margin: var(--container-padding);
+}
+
+.copied {
+    margin: var(--container-padding);
+    visibility: hidden;
+    user-select: none;
+}
+
+/****************************************************************************/
+
+#passwords_container table {
+    width: 100%;
+}
+#passwords_container table th {
+    text-align: left;
+}

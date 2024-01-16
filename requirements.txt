@@ -1,0 +1,12 @@
+# Core
+flask
+flask-sqlalchemy
+python-jose[cryptography]
+requests
+# Database drivers
+psycopg2-binary
+pymysql
+pymssql
+# Server
+gunicorn
+

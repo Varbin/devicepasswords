@@ -1,0 +1,27 @@
+:root {
+    --text-color: black;
+    --background-color: white;
+    --accent-color: #b9385d;
+    --on-accent-color: white;
+
+    --error: #660000;
+
+    --layer: #ddd8;
+
+    --font: "Noto Sans", "Open Sans", Helvetica, Arial, sans-serif;
+    --font-devicepassword: "Cascadia Code", "Liberation Mono", Menlo, Monaco, Consolas, monospace;
+    --font-size: 14pt;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --text-color: white;
+        --background-color: black;
+        --accent-color: #9b2e4d;
+        --on-accent-color: white;
+
+        --error: #990000;
+
+        --layer: #3338;
+    }
+}

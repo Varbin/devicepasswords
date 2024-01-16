@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>Device passwords</title>
+
+    <link rel="icon" href="{{ url_for("static", filename="icon.png") }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for("static", filename="vars.css") }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for("static", filename="main.css") }}">
+
+    <meta name="api_tokens" content="{{ url_for("tokens") }}">
+    <meta name="api_ping" content="{{ url_for("ping") }}">
+</head>
+<body>
+    <div class="limit">
+        <nav>
+            <div id="userinfo">
+                <p>
+                    {% if session.get("name") %}
+                        {{ session.get("name") }} ({{ session.get("preferred_username") }})
+                    {% else %}
+                        {{ session.get("preferred_username") }}
+                    {% endif %}
+                    <br>
+                    {{ session.get("email") }} <br>
+                    <a href="{{ url_for("logout") }}?state={{ session["state"] }}" title="Log out from your identity provider.">Logout</a>
+                </p>
+            {% if session.get("picture") %}
+                <img src="{{ session.get("picture") }}" alt="{{ session.get("name") }}">
+            {% endif %}
+            </div>
+            <h1>Device passwords</h1>
+            <p>UID: <i>{{ session.get("sub") }}</i></p>
+        </nav>
+        <main>
+            {# Keep this in a single line. #}
+            <div id="messages" class="container"></div>
+
+            <div id="passwords" class="inline-container">
+                <h2>Active device passwords</h2>
+
+                <div id="passwords_container">
+                    Loading...
+                </div>
+            </div>
+
+            <div id="new" class="container">
+                <h2>New device password</h2>
+                <form name="create-password">
+                    <label for="name">Name:</label>
+                    <input id="name" name="name" required><br>
+
+                    <input id="expires" name="expires" type="checkbox">
+                    <label for="expires">Expire</label>
+                    <input type="date" name="expiration" aria-label="expiration date" disabled required>
+
+                    <input type="hidden" name="state" value="{{ session.get("state") }}">
+                    <br>
+                    <input type="submit" value="Create device password">
+                </form>
+            </div>
+
+            <div id="out">
+
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename="main.js") }}" async defer></script>
+    <script src="{{ url_for('static', filename="ping.js") }}" async defer></script>
+</body>
+</html>
