@@ -1,0 +1,82 @@
+
+site_name: Simple device password management
+site_author: Varbin the Fox
+
+repo_url: https://github.com/varbin/devicepasswords
+
+theme: 
+  name: material
+
+  features:
+    - content.code.annotate
+    - content.code.copy
+    # - navigation.tabs
+    - navigation.path
+    - navigation.indexes
+
+  favicon: images/icon.png
+
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+      primary: custom
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+      primary: custom
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+      primary: custom
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - admonition
+
+#plugins:
+#  - privacy
+
+extra: 
+  social:
+    - icon: fontawesome/brands/mastodon
+      link: https://infosec.exchange/@varbin
+    - icon: fontawesome/brands/github
+      link: https://github.com/varbin
+
+nav:
+  - index.md
+  - tutorial/index.md
+  - How-To:
+    - how-to/index.md
+    - how-to/interface.md
+    - how-to/idp-integrations.md
+    - how-to/app-integrations.md
+    - how-to/password-hashing.md
+    - how-to/password-validation.md
+    - how-to/troubleshooting.md
+  - Recipies:
+    - recipes/index.md
+
+  - Reference:
+    - reference/index.md
+    - reference/options.md
+    - reference/schema.md
+
+extra_css:
+  - stylesheets/extra.css
