@@ -2,6 +2,7 @@
 """
 Device password generation.
 """
+import math
 import random
 
 from flask import Flask
@@ -11,17 +12,26 @@ wordlist = []
 
 class DevicePasswords:
     """Device password generator from list."""
-    def __init__(self, words: list[str]):
+    def __init__(self, words: list[str], digits=5, entropy=64):
         self.secure = random.SystemRandom()
         self.words = words
 
+        self.digits = digits
+        self.wordcount = int(math.floor(
+            (entropy - math.log2(10) * digits) / math.log2(len(words))
+        ))
+
     def generate(self) -> str:
-        """Generate device password consisting of 4 words and a 6-digit number,
-        joined by dashes."""
-        suffix = str(self.secure.randint(0, 99999)).rjust(5, '0')
+        """Generate device password consisting of words and numbers, joined by
+        dashes."""
+        suffix = "".join(
+            str(self.secure.randint(0, 9)) for _ in range(self.digits)
+        )
 
         return "-".join(
-            self.secure.choice(self.words).strip() for _ in range(4)
+            self.secure.choice(self.words).strip() for _ in range(
+                self.wordcount
+            )
         ) + "-" + suffix
 
     @classmethod
