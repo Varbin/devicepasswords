@@ -1,1 +1,1 @@
-# Password validation
+# Password hashing

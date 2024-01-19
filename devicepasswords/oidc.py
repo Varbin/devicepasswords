@@ -18,7 +18,7 @@ import logging
 
 Redeemed = namedtuple('Redeemed', ['id_token', 'expires_in',
                                    'refresh_token', 'refresh_token_expires_in',
-                                   'claims']
+                                   'claims', 'profile']
                       )
 
 
@@ -35,9 +35,6 @@ class OIDC:
         self.client_secret = client_secret
 
         self.session = requests.Session()
-
-        self.refresh_config()
-        self.refresh_keys()
 
     @property
     def refresh(self):
@@ -63,11 +60,14 @@ class OIDC:
 
         :raise ExceptionGroup of JWK errors, or a value error.
         """
-        keys = []
-        exceptions = []
         cert_response = self.session.get(self.config["jwks_uri"])
         cert_response.raise_for_status()
-        certs = cert_response.json()["keys"]
+        self.set_keys(cert_response.json())
+
+    def set_keys(self, obj):
+        keys = []
+        exceptions = []
+        certs = obj["keys"]
         for cert in certs:
             try:
                 key = jwk.construct(cert)
@@ -126,12 +126,19 @@ class OIDC:
         if e is not None:
             return Redeemed(None, 0, None, 0, {}), e
 
+        profile = {}
+        if at := token_json.get("access_token"):
+            profile = requests.get(
+                self.config["userinfo_endpoint"],
+                headers={"Authorization": f"Bearer {at}"}
+            ).json()
+
         return Redeemed(
             token_json["id_token"],
             token_json.get("expires_in", 0),
             token_json.get("refresh_token"),
             token_json.get("refresh_expires_in"),
-            claims
+            claims, profile
         ), None
 
     def redeem_refresh(self, code) -> tuple[Redeemed, Exception | None]:
@@ -162,8 +169,8 @@ class OIDC:
         query["client_id"] = self.client_id
         if "form_post" in self.config.get("response_modes_supported", ()):
             query["response_mode"] = "form_post"
-        else:
-            query["response_mode"] = "query"
+        #else:
+        #    query["response_mode"] = "query"
         return auth_url._replace(query=urlencode(query)).geturl()
 
     def get_logout_url(self, id_token, email, post_logout) -> str|None:

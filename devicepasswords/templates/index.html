@@ -12,6 +12,14 @@
 
     <meta name="api_tokens" content="{{ url_for("tokens") }}">
     <meta name="api_ping" content="{{ url_for("ping") }}">
+    <script>
+        const config = {
+            "api_tokens": {{ url_for("tokens") | tojson }},
+            "api_ping": {{ url_for("ping") | tojson }},
+            "no_awoo": {{ config["UI_NO_AWOO"] | tojson }},
+            "show_last_used": {{ config["UI_SHOW_LAST_USED"] | tojson }}
+        }
+    </script>
 </head>
 <body>
     <div class="limit">
@@ -31,8 +39,10 @@
                 <img src="{{ session.get("picture") }}" alt="{{ session.get("name") }}">
             {% endif %}
             </div>
-            <h1>Device passwords</h1>
+            <h1>{{ config["UI_HEADING"] }} <small>{{ config["UI_HEADING_SUB"] }}</small></h1>
+            {% if config["UI_SHOW_SUBJECT"] %}
             <p>UID: <i>{{ session.get("sub") }}</i></p>
+            {% endif %}
         </nav>
         <main>
             {# Keep this in a single line. #}

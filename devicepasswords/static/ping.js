@@ -1,4 +1,4 @@
-const ping_api = document.querySelector("meta[name=api_ping]").content
+const ping_api = config.api_ping
 console.log("Found 'ping' endpoint: ", ping_api)
 
 async function sleep(timeout) {

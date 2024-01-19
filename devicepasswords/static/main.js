@@ -1,4 +1,4 @@
-const token_api = document.querySelector("meta[name=api_tokens]").content
+const token_api = config.api_tokens
 console.log("Found 'token' endpoint: ", token_api)
 
 /**
@@ -45,7 +45,9 @@ function header() {
     const remove = document.createElement("th")
     remove.innerHTML = "<abbr title=\"Delete\">🗑</abbr>"
 
-    header.replaceChildren(name, expires, lastUsed, remove)
+    header.replaceChildren(name, expires,
+        config.show_last_used ? lastUsed : "", remove
+    )
     return header
 }
 
@@ -69,7 +71,7 @@ async function refresh() {
             remove.href = "#"
             remove.dataset["id"] = password.primary
             remove.onclick = deleteToken
-            row.replaceChildren(name, expires, lastUsed, remove)
+            row.replaceChildren(name, expires, config.show_last_used ? lastUsed : "", remove)
             rows.push(row)
         }
     } else {
@@ -137,7 +139,8 @@ function showToken(name, secret) {
 
     const container = document.createElement("div")
     container.replaceChildren(
-        "Awooo! Here is your new device password. ",
+        config.no_awoo ? "" : "Awoo! ",
+        "Here is your new device password. ",
         "Copy the password now, as you cannot see it later.",
         document.createElement("br"),
         button,

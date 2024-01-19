@@ -65,18 +65,15 @@ nav:
   - How-To:
     - how-to/index.md
     - how-to/interface.md
-    - how-to/idp-integrations.md
-    - how-to/app-integrations.md
+    - how-to/idp-integration.md
+    - how-to/app-integration.md
     - how-to/password-hashing.md
     - how-to/password-validation.md
     - how-to/troubleshooting.md
-  - Recipies:
-    - recipes/index.md
-
   - Reference:
     - reference/index.md
     - reference/options.md
-    - reference/schema.md
+    - reference/database.md
 
 extra_css:
   - stylesheets/extra.css

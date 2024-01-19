@@ -1,4 +1,5 @@
 import http
+import json
 import secrets
 import sys
 import time
@@ -12,6 +13,7 @@ from flask import Flask, session, redirect, render_template, request, \
 from .db import db, init_db, Session, User, Token
 from .devpwd import DevicePasswords
 from .oidc import OIDC
+from .pwdhash import hasher
 from .smgmt import valid_session, update_session, destroy_session, \
     new_session
 
@@ -23,13 +25,20 @@ def create_app():
     app.config["OIDC_CLAIM_EMAIL_VERIFIED"] = "email_verified"
     app.config["OIDC_CLAIM_USERNAME"] = "preferred_username"
     app.config["OIDC_SCOPE"] = "openid email profile"
+    app.config["PASSWORD_HASH"] = "plaintext"
+    app.config["UI_HEADING"] = "Device passwords"
+    app.config["UI_HEADING_SUB"] = ""
+    app.config["UI_SHOW_SUBJECT"] = True
+    app.config["UI_SHOW_LAST_USED"] = True
+    app.config["UI_NO_AWOO"] = False
+    app.config["MAX_EXPIRATION_DAYS"] = 0
 
     app.config.from_prefixed_env("DP")
 
     for var in ["OIDC_DISCOVERY_URL", "OIDC_CLIENT_ID", "OIDC_CLIENT_SECRET",
                 "SQLALCHEMY_DATABASE_URI"]:
         if not app.config.get(var):
-            print(f"{var} not set.", file=sys.stderr)
+            app.logger.warning(f"{var} not set.")
             exit(1)
 
     if not app.config.get("SECRET_KEY"):
@@ -40,6 +49,15 @@ def create_app():
     init_db(app)
 
     oidc = OIDC.from_app(app)
+    oidc.refresh_config()
+    # Manual overwriting keys here
+    # Some IdPs may have different keys for consumer and business accounts,
+    # and Oracle ICS instances would need authentication.
+    if keyfile := app.config.get("OIDC_CERTS"):
+        with open(keyfile) as kf:
+            oidc.set_keys(json.load(kf))
+    else:
+        oidc.refresh_keys()
     oidc.refresh = True  # Automatically reload in background.
     device_passwords = DevicePasswords.from_app(app)
 
@@ -107,9 +125,12 @@ def create_app():
             abort(403)
 
         app.logger.warning("%s logged out", session["email"])
+
         token = session["token"]
         email = session["email"]
-        session.clear()
+
+        if sid := session.get("sid"):
+            destroy_session(None, sid)
 
         if logout_url := oidc.get_logout_url(
                 token, email, url_for("index", _external=True)
@@ -121,6 +142,43 @@ def create_app():
     @app.route("/api/ping")
     def ping():
         return {"pong": valid_session(oidc)}
+
+    @app.route("/api/logout-frontchannel")
+    def frontchannel_logout():
+        """
+        Implement a 'front channel' logout that is initiated on the IdP page.
+        Is only active, if the IdP supports it.
+        """
+
+        # Old standard:
+        # https://openid.net/specs/openid-connect-logout-1_0-04.html
+        # New standard:
+        # https://openid.net/specs/openid-connect-frontchannel-1_0.html
+        # That is why there are to variables ^^
+        if (not oidc.config.get("http_logout_supported") and
+                not oidc.config.get("frontchannel_logout_supported")):
+            return abort(400, "Feature not supported.")
+
+        sid = request.args.get("sid")
+        iss = request.args.get("iss")
+
+        if (oidc.config.get("logout_session_supported") or
+                oidc.config.get("frontchannel_logout_session_supported")):
+            if not sid or not iss:
+                return abort(400, "Missing session")
+
+        if iss and sid:
+            if iss != oidc.config.get("iss"):
+                return abort(400, "Invalid issuer.")
+            destroy_session(None, sid)
+        else:
+            if sid := session.get("sid"):
+                destroy_session(None, sid)
+            else:
+                session.clear()
+
+        return ""
+
 
     @app.route("/api/logout-backchannel", methods=["POST"])
     def backchannel_logout():
@@ -198,7 +256,7 @@ def create_app():
                 t = Token(
                     user=session["sub"],
                     name=name,
-                    token=token_value,
+                    token=hasher.hash(token_value),
                     expires=expires
                 )
                 db.session.add(t)

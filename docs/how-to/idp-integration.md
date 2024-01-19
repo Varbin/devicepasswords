@@ -1,4 +1,4 @@
-# Identity provider integrations
+# Identity provider integration
 
 This page describes the integration of the device password manager to various IdPs.
 
@@ -18,7 +18,7 @@ In your environment file for the device password manager, you must set the follo
 
 !!! note Further configuration
 
-    See the possible [configuration variables](../options.md) for details.
+    See the possible [configuration variables](../reference/options.md) for details.
 
 ## Keycloak
 
@@ -45,6 +45,10 @@ to open the client creation wizard.
    Store the client secret as `DP_OIDC_CLIENT_SECRET`.
 6. The endpoint configuration URL - to be stored as `DP_OIDC_DISCOVERY_URL` can be found in the realm settings.
     ![](../images/keycloak%206.png)
+
+## Oracle
+
+
 
 ## Google
 

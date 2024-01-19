@@ -51,13 +51,13 @@ def valid_session(oidc: OIDC) -> bool:
     sinfo.refresh_token = redeemed.refresh_token
     if redeemed.expires_in:
         sinfo.refresh_token_expiration = (
-            datetime.now() +
-            timedelta(seconds=redeemed.refresh_token_expires_in)
+                datetime.now() +
+                timedelta(seconds=redeemed.refresh_token_expires_in)
         )
     else:
         sinfo.refresh_token_expiration = None
 
-    update_session(redeemed.id_token, redeemed.claims)
+    update_session(redeemed.id_token, redeemed.claims, redeemed.profile)
     db.session.add(sinfo)
     db.session.commit()
 
@@ -72,7 +72,7 @@ def destroy_session(sub=None, sid=None):
             db.session.delete(sess)
     elif sub:
         for sess in db.session.execute(
-            db.select(Session).filter_by(sub=sub)
+                db.select(Session).filter_by(sub=sub)
         ).scalars() or []:
             db.session.delete(sess)
 
@@ -83,7 +83,7 @@ def new_session(redeemed: Redeemed):
     session.clear()
     session["state"] = secrets.token_urlsafe(16)
 
-    update_session(redeemed.id_token, redeemed.claims)
+    update_session(redeemed.id_token, redeemed.claims, redeemed.profile)
     if not (sid := redeemed.claims.get("sid")):
         return
     sess = db.session.get(Session, sid) or Session(sid=sid)
@@ -92,15 +92,18 @@ def new_session(redeemed: Redeemed):
     sess.refresh_token = redeemed.refresh_token
     if redeemed.refresh_token_expires_in:
         sess.refresh_token_expiration = datetime.now() + \
-                        timedelta(seconds=redeemed.refresh_token_expires_in)
+                                        timedelta(
+                                            seconds=redeemed.refresh_token_expires_in)
 
     db.session.add(sess)
     db.session.commit()
 
 
-def update_session(id_token, claims):
+def update_session(id_token, claims, profile):
     """Update the id_token and the claims of the current message."""
     app = current_app
+
+    session["token"] = id_token
 
     required = [
         "sub", app.config["OIDC_CLAIM_EMAIL"],
@@ -109,9 +112,11 @@ def update_session(id_token, claims):
     if app.config.get("OIDC_CLAIM_VERIFIED"):
         required.append(app.config["OIDC_CLAIM_VERIFIED"])
     # Validate required claims:
-    print(claims)
     for claim in required:
-        if not claims.get(claim):
+        if not claims.get(claim) and not (
+                app.config.get("OIDC_CLAIMS_FROM_PROFILE") and
+                profile.get(claim)
+        ):
             abort(403,
                   "Missing claim \"%s\". Contact your administrator."
                   % claim)
@@ -121,16 +126,25 @@ def update_session(id_token, claims):
         session[claim] = claims[claim]
 
     session["sub"] = claims["sub"]
-    session["email"] = claims[app.config["OIDC_CLAIM_EMAIL"]]
-    session["preferred_username"] = claims[
-        app.config["OIDC_CLAIM_USERNAME"]]
-    # Not required, but useful. sid is required for back-channel logout.
-    for claim in ["picture", "name", "sid"]:
+    if claims.get("sid"):
+        session["sid"] = claims["sid"]
+
+    # Some IdPs only return the (for us mandatory data) in the profile.
+    session["email"] = (claims.get(app.config["OIDC_CLAIM_EMAIL"]) or
+                        profile.get(app.config["OIDC_CLAIM_EMAIL"]))
+    session["preferred_username"] = (
+        claims.get(app.config["OIDC_CLAIM_USERNAME"]) or
+        profile.get(app.config["OIDC_CLAIM_USERNAME"])
+    )
+    # Not required, but useful.
+    for claim in ["picture", "name"]:
         if claims.get(claim):
+            # Will safely be loaded from profile
             session[claim] = claims[claim]
-    session["token"] = id_token
+        elif profile.get(claim):
+            session[claim] = profile[claim]
+
     if app.config.get("OIDC_CLAIM_VERIFIED"):
         if not claims.get(app.config["OIDC_CLAIM_VERIFIED"]):
             session.clear()
             abort(403, "Email not verified")
-

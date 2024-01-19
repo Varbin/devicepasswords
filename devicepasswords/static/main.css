@@ -82,6 +82,11 @@ nav h1 {
     line-height: var(--size);
 }
 
+nav h1 small {
+    font-size: 75%;
+    font-weight: lighter;
+}
+
 #userinfo img {
     background: gray;
     border-radius: calc(var(--size) * 1.5) ;
