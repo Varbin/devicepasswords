@@ -3,10 +3,10 @@ name: Docker Container CI
 on:
   push:
     branches:
-      - main
+      - trunk
   pull_request:
     branches:
-      - main
+      - trunk
 
 permissions:
   contents: read
