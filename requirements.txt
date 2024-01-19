@@ -3,6 +3,9 @@ flask
 flask-sqlalchemy
 python-jose[cryptography]
 requests
+# Password hashing
+passlib
+argon2_cffi
 # Database drivers
 psycopg2-binary
 pymysql
