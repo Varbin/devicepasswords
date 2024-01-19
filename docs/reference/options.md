@@ -43,6 +43,6 @@ scrypt, argon2, md5_crypt, sha1_crypt, sha256_crypt, sha512_crypt
 
 !!! info "Related How-To guides"
 
-    * [Identity provider integration](../how-to/idp-integrations.md)
+    * [Identity provider integration](../how-to/idp-integration.md)
     * [User interface customization](../how-to/interface.md)
     * [Password hashing](../how-to/password-hashing.md)
