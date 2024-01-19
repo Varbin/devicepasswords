@@ -1,20 +1,19 @@
-import base64
-import secrets
+# SPDX-License-Identifier: MPL-2.0
+"""
+OIDC implementation.
+"""
+import _thread
+import logging
 import sys
 import time
 from collections import namedtuple
 from urllib.parse import urlparse, parse_qs, urlencode
 
-import _thread
 import requests
 from flask import Flask
-
-from jose import jwt, jwk
 from jose import JWTError
+from jose import jwt, jwk
 from jose.exceptions import JWTClaimsError, ExpiredSignatureError, JWKError
-
-
-import logging
 
 Redeemed = namedtuple('Redeemed', ['id_token', 'expires_in',
                                    'refresh_token', 'refresh_token_expires_in',

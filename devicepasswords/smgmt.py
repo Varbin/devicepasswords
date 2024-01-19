@@ -1,3 +1,7 @@
+# SPDX-License-Identifier: MPL-2.0
+"""
+Session management.
+"""
 import logging
 import secrets
 import time

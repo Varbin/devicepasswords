@@ -1,14 +1,16 @@
+# SPDX-License-Identifier: MPL-2.0
+"""
+Device password manager.
+
+@author Varbin the Fox.
+"""
 import http
 import json
 import secrets
-import sys
-import time
-import traceback
-from datetime import datetime, date
+from datetime import date
 
-import requests.exceptions
 from flask import Flask, session, redirect, render_template, request, \
-    url_for, abort, current_app
+    url_for, abort
 
 from .db import db, init_db, Session, User, Token
 from .devpwd import DevicePasswords
@@ -19,6 +21,11 @@ from .smgmt import valid_session, update_session, destroy_session, \
 
 
 def create_app():
+    """
+    Return the app instance.
+
+    :return: WSGI compatible instance
+    """
     app = Flask(__name__, instance_relative_config=True)
     app.config["WORDLIST"] = "wordlist.txt"
     app.config["OIDC_CLAIM_EMAIL"] = "email"
@@ -42,8 +49,8 @@ def create_app():
             exit(1)
 
     if not app.config.get("SECRET_KEY"):
-        print("No secret key set, generating a fresh one. "
-              "Set one for a load balanced setup.")
+        app.logger.warning("No secret key set, generating a fresh one. "
+                           "Set one for a load balanced setup.")
         app.config["SECRET_KEY"] = secrets.token_bytes(32)
 
     init_db(app)

@@ -1,3 +1,7 @@
+# SPDX-License-Identifier: MPL-2.0
+"""
+Password hasher.
+"""
 from passlib.context import CryptContext
 
 

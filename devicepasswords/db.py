@@ -1,3 +1,7 @@
+# SPDX-License-Identifier: MPL-2.0
+"""
+Database schema classes.
+"""
 from datetime import datetime
 from typing import List
 
