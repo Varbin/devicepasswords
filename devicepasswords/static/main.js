@@ -69,7 +69,7 @@ async function refresh() {
             const remove = document.createElement("a")
             remove.innerText = "🗑"
             remove.href = "#"
-            remove.dataset["id"] = password.primary
+            remove.dataset["id"] = password.id
             remove.onclick = deleteToken
             row.replaceChildren(name, expires, config.show_last_used ? lastUsed : "", remove)
             rows.push(row)

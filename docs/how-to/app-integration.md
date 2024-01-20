@@ -1,3 +1,5 @@
+# Integrate your applications
+
 ## Dovecot
 
 To integrate dovecot with device passwords, 
@@ -7,8 +9,17 @@ See [dovecot configuration manual](https://doc.dovecot.org/configuration_manual/
 The `ldap_sha512_crypt` hash does work.
 For general database integration you can use the [dovecot configuration manual](https://doc.dovecot.org/configuration_manual/authentication/sql/#user-iteration) regarding SQL.
 
+```postgresql
+SELECT 
+    users.email, users.username, tokens.token 
+FROM users
+LEFT OUTER JOIN tokens on users.sub = tokens.sub
+WHERE users.username = 'bla'
+;
+```
+
 An example SQL query to look up 
-```sql
+
 SELECT email as user, token as password 
 FROM users 
 LEFT OUTER JOIN tokens t ON users."primary" = t.user

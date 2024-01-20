@@ -17,7 +17,7 @@ This is the list of supported variables:
 | `DP_OIDC_GROUP_MEMBERSHIP`     | Require the given group membership to allow access.                                                                                     | *None*                                                             |
 | `DP_OIDC_GROUP_CLAIM`          | The group claim. The claim must be JSON array.                                                                                          | groups                                                             |                                                          |
 | `DP_WORDLIST`                  | Path to the wordlist for the generated passwords. The container ships with *wordlist.txt* and *wordlist-de.txt*.                        | wordlist.txt                                                       |
-| `DP_PASSWORD_HASH`             | Enable password hashing. See below for valid values, and the [password hasing guide](../how-to/password-hashing.md) for details.        | plaintext                                                          |
+| `DP_PASSWORD_HASH`             | Enable password hashing. See how to [configure password hashing](../how-to/password-hashing.md#supported-values) for details.           | plaintext                                                          |
 | `DP_UI_HEADING`                | Heading.                                                                                                                                | Device Passwords                                                   |
 | `DP_UI_HEADING_SUB`            | Add a subtext after "Device Passwords", none by default.                                                                                | *None*                                                             |
 | `DP_UI_SHOW_SUBJECT`           | Show the subject identifier below the heading                                                                                           | true                                                               |
@@ -29,17 +29,9 @@ Additionally, the Docker container supports the following options:
 
 | Variable | Meaning                                           | Default |
 |----------|---------------------------------------------------|---------|
-| WORKERS  | Amount of worker processes to spawn.              | 4       |
-| CLASS    | Worker class to use. Consult the gunicorn manual. | gevent  |
+| `WORKERS`  | Amount of worker processes to spawn.              | 4       |
+| `CLASS`    | Worker class to use. Consult the gunicorn manual. | gevent  |
 
-<details>
-<summary>Supported password hashing values</summary>
-
-plaintext, ldap_md5, ldap_sha1, ldap_salted_md5, ldap_salted_sha1, 
-ldap_salted_sha256, ldap_salted_sha512, ldap_sha1_crypt, ldap_sha256_crypt, 
-ldap_sha512_crypt, ldap_bcrypt,  roundup_plaintext, scram, nthash, bcrypt, 
-scrypt, argon2, md5_crypt, sha1_crypt, sha256_crypt, sha512_crypt
-</details>
 
 !!! info "Related How-To guides"
 

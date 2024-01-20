@@ -3,6 +3,7 @@ site_name: Simple device password management
 site_author: Varbin the Fox
 
 repo_url: https://github.com/varbin/devicepasswords
+edit_uri: edit/trunk/docs/
 
 theme: 
   name: material
@@ -13,7 +14,13 @@ theme:
     # - navigation.tabs
     - navigation.path
     - navigation.indexes
+    - navigation.sections
+    - navigation.footer
+    - content.action.view
+    - content.action.edit
+    - content.code.copy
 
+  logo: images/icon.png
   favicon: images/icon.png
 
   palette:
@@ -46,8 +53,17 @@ markdown_extensions:
       pygments_lang_class: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - toc:
+      permalink: true
   - admonition
+  - pymdownx.tabbed:
+     alternate_style: true
+
 
 #plugins:
 #  - privacy
@@ -61,7 +77,12 @@ extra:
 
 nav:
   - index.md
-  - tutorial/index.md
+  - Tutorial:
+    - tutorial/index.md
+    - tutorial/containers.md
+    - tutorial/keycloak.md
+    - tutorial/dovecot.md
+    - tutorial/conclusion.md
   - How-To:
     - how-to/index.md
     - how-to/interface.md

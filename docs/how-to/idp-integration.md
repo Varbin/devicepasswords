@@ -1,4 +1,4 @@
-# Identity provider integration
+# Integrate with an Identity Provider (IdP)
 
 This page describes the integration of the device password manager to various IdPs.
 

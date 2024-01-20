@@ -7,10 +7,14 @@ Device password manager.
 import http
 import json
 import secrets
-from datetime import date
+import sys
+import time
+import uuid
+from datetime import date, timedelta, datetime
 
 from flask import Flask, session, redirect, render_template, request, \
     url_for, abort
+from sqlalchemy import Uuid
 
 from .db import db, init_db, Session, User, Token
 from .devpwd import DevicePasswords
@@ -33,20 +37,40 @@ def create_app():
     app.config["OIDC_CLAIM_USERNAME"] = "preferred_username"
     app.config["OIDC_SCOPE"] = "openid email profile"
     app.config["PASSWORD_HASH"] = "plaintext"
+    app.config["PASSWORD_MAX_EXPIRATION_DAYS"] = 0
+    app.config["PASSWORD_ENTROPY"] = 64
     app.config["UI_HEADING"] = "Device passwords"
     app.config["UI_HEADING_SUB"] = ""
     app.config["UI_SHOW_SUBJECT"] = True
     app.config["UI_SHOW_LAST_USED"] = True
     app.config["UI_NO_AWOO"] = False
-    app.config["MAX_EXPIRATION_DAYS"] = 0
 
     app.config.from_prefixed_env("DP")
 
     for var in ["OIDC_DISCOVERY_URL", "OIDC_CLIENT_ID", "OIDC_CLIENT_SECRET",
                 "SQLALCHEMY_DATABASE_URI"]:
         if not app.config.get(var):
-            app.logger.warning(f"{var} not set.")
+            app.logger.error(f"{var} not set.")
             exit(1)
+
+    try:
+        hasher.hash("", scheme=app.config["PASSWORD_HASH"])
+    except KeyError:
+        app.logger.error(
+            f"Invalid password hash {app.config['PASSWORD_HASH']}",
+            exc_info=sys.exc_info()
+        )
+        exit(1)
+
+    try:
+        int(app.config["PASSWORD_MAX_EXPIRATION_DAYS"])
+    except TypeError:
+        app.logger.error(
+            f"Invalid expiration date value " +
+            app.config['PASSWORD_MAX_EXPIRATION_DAYS'],
+            exc_info=sys.exc_info()
+        )
+        exit(1)
 
     if not app.config.get("SECRET_KEY"):
         app.logger.warning("No secret key set, generating a fresh one. "
@@ -56,7 +80,17 @@ def create_app():
     init_db(app)
 
     oidc = OIDC.from_app(app)
-    oidc.refresh_config()
+    for i in range(5):
+        time.sleep(2**i-1)
+        try:
+            oidc.refresh_config()
+        except:
+            app.logger.warning(f"Cannot connect to IdP (try {i+1}/5)",
+                               exc_info=sys.exc_info())
+        else:
+            break
+    else:
+        app.logger.error("Cannot connect to IdP try (5/5).")
     # Manual overwriting keys here
     # Some IdPs may have different keys for consumer and business accounts,
     # and Oracle ICS instances would need authentication.
@@ -115,8 +149,7 @@ def create_app():
             session.get("sid", "-")
         )
 
-        user = db.session.get(User, session["sub"]) or User(
-            primary=session["sub"])
+        user = db.session.get(User, session["sub"]) or User(sub=session["sub"])
         user.username = session["preferred_username"]
         user.email = session["email"]
         db.session.add(user)
@@ -236,11 +269,11 @@ def create_app():
             case "GET":
                 user_tokens = db.session.execute(
                     db.select(Token)
-                    .filter_by(user=session["sub"])
+                    .filter_by(sub=session["sub"])
                 ).scalars() or []
                 return [
                     {
-                        "primary": token.primary,
+                        "id": token.id,
                         "name": token.name,
                         "expires": token.expires,
                     } for token in user_tokens
@@ -248,22 +281,28 @@ def create_app():
 
             case "POST":
                 if request.form.get("state") != session["state"]:
-                    print(request.form.get("state"), session["state"])
                     app.logger.warning("Invalid CSRF token")
                     abort(403)
 
                 if not (name := request.form.get("name")):
                     abort(400)
-                if expires := request.form.get("expires"):
+                if expires := request.form.get("expire"):
                     expires = date.fromisoformat(expires)
                 else:
                     expires = None
+                if ((expiration := app.config["PASSWORD_MAX_EXPIRATION_DAYS"])
+                        > 0):
+                    maximum = ((datetime.now() + timedelta(days=expiration))
+                               .date())
+                    if expires is None or expires > maximum:
+                        expires = maximum
 
                 token_value = device_passwords.generate()
                 t = Token(
-                    user=session["sub"],
+                    sub=session["sub"],
                     name=name,
-                    token=hasher.hash(token_value),
+                    token=hasher.hash(token_value,
+                                      scheme=app.config["PASSWORD_HASH"]),
                     expires=expires
                 )
                 db.session.add(t)
@@ -273,19 +312,20 @@ def create_app():
                     "name": name,
                     "secret": token_value,
                 }
+
             case "DELETE":
                 token = db.session.execute(
                     db.select(Token)
                     .filter_by(
-                        user=session["sub"],
-                        primary=request.form.get("id"))
+                        sub=session["sub"],
+                        id=request.form.get("id"))
                 ).scalar_one_or_none()
                 if token is None:
                     abort(404)
                 db.session.delete(token)
                 db.session.commit()
                 return {
-                    "primary": token.primary,
+                    "id": token.id,
                     "name": token.name,
                 }
             case _:

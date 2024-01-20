@@ -3,6 +3,7 @@ flask
 flask-sqlalchemy
 python-jose[cryptography]
 requests
+gevent>1.4
 # Password hashing
 passlib
 argon2_cffi

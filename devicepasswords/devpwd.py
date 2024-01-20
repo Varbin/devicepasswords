@@ -17,7 +17,7 @@ class DevicePasswords:
         self.words = words
 
         self.digits = digits
-        self.wordcount = int(math.floor(
+        self.wordcount = int(math.ceil(
             (entropy - math.log2(10) * digits) / math.log2(len(words))
         ))
 
@@ -40,4 +40,5 @@ class DevicePasswords:
         the config parameter WORDLIST is set to a line separated list of words.
         """
         with open(app.config["WORDLIST"]) as wl:
-            return cls([line.strip() for line in wl.readlines()])
+            return cls([line.strip() for line in wl.readlines()],
+                       entropy=app.config["PASSWORD_ENTROPY"])

@@ -1,4 +1,4 @@
-# User interface customization
+# Customize the user interface
 
 ## Configurable elements
 
