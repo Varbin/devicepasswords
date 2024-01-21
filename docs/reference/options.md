@@ -25,12 +25,12 @@ This is the list of supported variables:
 | `DP_UI_NO_AWOO`                | Do not display "Awooo!" after creating the device passwords. By default the system howls.                                               | false                                                              |
 | `DP_MAX_EXPIRATION_DAYS`       | Maximum time in days a device password is valid. Any value ≤ 1 disables forced expiration.                                              | 0                                                                  |
 
-Additionally, the Docker container supports the following options:
+Additionally, the Docker supports the following options:
 
-| Variable | Meaning                                           | Default |
-|----------|---------------------------------------------------|---------|
-| `WORKERS`  | Amount of worker processes to spawn.              | 4       |
-| `CLASS`    | Worker class to use. Consult the gunicorn manual. | gevent  |
+| Variable            | Meaning                                                                                                        | Default |
+|---------------------|----------------------------------------------------------------------------------------------------------------|---------|
+| `GUNICORN_CMD_ARGS` | Pass additional arguments to gunicorn, the webserver running this. See the gunicorn documentation for details. | *empty* |
+
 
 
 !!! info "Related How-To guides"

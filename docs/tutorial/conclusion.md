@@ -1,3 +1,5 @@
+# 4. Conclusion
+
 You now have a running device manager instance, 
 an IMAP server configured to use it, and a keycloak instance.
 

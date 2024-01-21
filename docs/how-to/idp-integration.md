@@ -46,9 +46,13 @@ to open the client creation wizard.
 6. The endpoint configuration URL - to be stored as `DP_OIDC_DISCOVERY_URL` can be found in the realm settings.
     ![](../images/keycloak%206.png)
 
-## Oracle
+## Nextcloud
 
-
+Nextcloud can work as an identity provider with the [OIDC Identity Provider] plugin.
+The discovery URL is `https://<base url>/index.php/apps/oidc/openid-configuration`.
+You can register the device password manager at the administrator settings,
+at the security page.
+The section is called "OpenID Connect-Clients" (*not* OAuth 2.0-Clients).
 
 ## Google
 

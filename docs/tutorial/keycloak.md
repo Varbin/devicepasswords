@@ -1,3 +1,5 @@
+# 2. Keykloak
+
 The keycloak instance is running at http://127.0.0.1:8080,
 the administration interface is located at <http://127.0.0.1:8080/admin/master/console>.
 You can log in with the username `admin` and the password `Pa55w0rd`,
@@ -46,7 +48,7 @@ You can add the `http://127.0.0.1:5000/api/logout-frontchannel` as frontchannel 
 !!! question "How to integrate other identity providers (IdPs)?"
 
     If you do not keycloak in production, 
-    look at the guide on how to [integrate with an Identity provider](../how-to/idp-integration).
+    look at the guide on how to [integrate with an Identity provider](../how-to/idp-integration.md).
     Any IdP supporting OpenID Connect (IdP) is supported.
     Please keep in mind each instance of the device password manager only supports a single identity provider at a time.
 

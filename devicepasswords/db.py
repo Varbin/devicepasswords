@@ -50,15 +50,17 @@ class Log(db.Model):
     tokenId: Mapped[Uuid] = mapped_column(ForeignKey("tokens.id"))
 
 
-class Session(db.Model):
-    __tablename__ = "session"
+class Revoked(db.Model):
+    __tablename__ = "revoked"
 
     sid: Mapped[str] = mapped_column(String, primary_key=True)
-    sub: Mapped[str] = mapped_column(String, nullable=False)
-    id_token: Mapped[str] = mapped_column(String, nullable=False)
-    refresh_token: Mapped[str] = mapped_column(String, nullable=True)
-    refresh_token_expiration: Mapped[datetime] = mapped_column(DateTime,
-                                                               nullable=True)
+
+    #sub: Mapped[str] = mapped_column(String, nullable=False)
+    #id_token: Mapped[str] = mapped_column(String, nullable=False)
+    #refresh_token: Mapped[str] = mapped_column(String, nullable=True)
+    #refresh_token_expiration: Mapped[datetime] = mapped_column(DateTime,
+    #                                                           nullable=True)
+
 
 def init_db(app: Flask):
     db.init_app(app)

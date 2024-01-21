@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from flask import current_app, abort, session
 
 from . import OIDC
-from .db import db, Session
+from .db import db, Revoked
 from .oidc import Redeemed
 
 logger = logging.getLogger(__name__)
@@ -26,21 +26,18 @@ def valid_session(oidc: OIDC) -> bool:
     if not (sid := session.get("sid")):
         return not expired
 
-    # Session not in database
-    if (sinfo := db.session.get(Session, sid)) is None:
+    if db.session.get(Revoked, sid) is not None:
         return False
-    if not expired:
-        return True
 
-    # Session is expired and cannot be refreshed in any way.
-    if expired and (not sinfo.refresh_token or (
-            sinfo.refresh_token_expiration is not None and
-            sinfo.refresh_token_expiration < datetime.now()
+    if expired and (
+            not session.get("refresh_token") or (
+                session.get("refresh_token_expiration") is not None and
+                session.get("refresh_token_expiration") < datetime.now()
     )):
         return False
 
     current_app.logger.info("Refreshing session (sid=%s)" % sid)
-    redeemed, e = oidc.redeem_refresh(sinfo.refresh_token)
+    redeemed, e = oidc.redeem_refresh(session.get("refresh_token"))
     if e is not None:
         current_app.logger.warning(
             "Refreshing failed (sid=%s)" % sid,
@@ -51,19 +48,17 @@ def valid_session(oidc: OIDC) -> bool:
 
     current_app.logger.info("Refreshing successful (sid=%s)" % sid)
 
-    sinfo.id_token = redeemed.id_token
-    sinfo.refresh_token = redeemed.refresh_token
+    session["id_token"] = redeemed.id_token
+    session["refresh_token"] = redeemed.refresh_token
     if redeemed.expires_in:
-        sinfo.refresh_token_expiration = (
+        session["refresh_token_expiration"] = (
                 datetime.now() +
                 timedelta(seconds=redeemed.refresh_token_expires_in)
         )
     else:
-        sinfo.refresh_token_expiration = None
+        session["refresh_token_expiration"] = None
 
     update_session(redeemed.id_token, redeemed.claims, redeemed.profile)
-    db.session.add(sinfo)
-    db.session.commit()
 
     return True
 
@@ -72,35 +67,20 @@ def destroy_session(sub=None, sid=None):
     session.clear()
 
     if sid:
-        if (sess := db.session.get(Session, sid)) is not None:
-            db.session.delete(sess)
-    elif sub:
-        for sess in db.session.execute(
-                db.select(Session).filter_by(sub=sub)
-        ).scalars() or []:
-            db.session.delete(sess)
-
-    db.session.commit()
+        db.session.add(Revoked(sid=sid))
+        db.session.commit()
 
 
 def new_session(redeemed: Redeemed):
-    session.clear()
     session["state"] = secrets.token_urlsafe(16)
-
-    update_session(redeemed.id_token, redeemed.claims, redeemed.profile)
-    if not (sid := redeemed.claims.get("sid")):
-        return
-    sess = db.session.get(Session, sid) or Session(sid=sid)
-    sess.sub = redeemed.claims.get("sub")
-    sess.id_token = redeemed.id_token
-    sess.refresh_token = redeemed.refresh_token
+    session["id_token"] = redeemed.id_token
+    session["refresh_token"] = redeemed.refresh_token
+    session["sid"] = redeemed.claims.get("sid")
     if redeemed.refresh_token_expires_in:
-        sess.refresh_token_expiration = datetime.now() + \
-                                        timedelta(
-                                            seconds=redeemed.refresh_token_expires_in)
-
-    db.session.add(sess)
-    db.session.commit()
+        session["refresh_token_expiration"] \
+            = (datetime.now() +
+               timedelta(seconds=redeemed.refresh_token_expires_in))
+    update_session(redeemed.id_token, redeemed.claims, redeemed.profile)
 
 
 def update_session(id_token, claims, profile):
@@ -110,7 +90,7 @@ def update_session(id_token, claims, profile):
     session["token"] = id_token
 
     required = [
-        "sub", app.config["OIDC_CLAIM_EMAIL"],
+        "exp", "iss", "sub", app.config["OIDC_CLAIM_EMAIL"],
         app.config["OIDC_CLAIM_USERNAME"],
     ]
     if app.config.get("OIDC_CLAIM_VERIFIED"):
@@ -125,11 +105,10 @@ def update_session(id_token, claims, profile):
                   "Missing claim \"%s\". Contact your administrator."
                   % claim)
 
-    # Always present (more or less)
-    for claim in ["exp", "iss"]:
+    # Always present
+    for claim in ["exp", "sub"]:
         session[claim] = claims[claim]
 
-    session["sub"] = claims["sub"]
     if claims.get("sid"):
         session["sid"] = claims["sid"]
 

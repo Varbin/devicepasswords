@@ -1,3 +1,5 @@
+# 3. Dovecot
+
 The next step is to configure the IMAP server dovecot to the device passwords application.
 Connecting with `telnet localhost 143` should result in a similar output similar to the following one:
 

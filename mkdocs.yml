@@ -16,12 +16,14 @@ theme:
     - navigation.indexes
     - navigation.sections
     - navigation.footer
+    - navigation.instant
+    - navigation.tabs
     - content.action.view
     - content.action.edit
     - content.code.copy
 
-  logo: images/icon.png
-  favicon: images/icon.png
+  logo: images/icon.svg
+  favicon: images/icon.svg
 
   palette:
     - media: "(prefers-color-scheme)"
@@ -62,8 +64,12 @@ markdown_extensions:
       permalink: true
   - admonition
   - pymdownx.tabbed:
-     alternate_style: true
-
+      alternate_style: true
+  - attr_list
+  - md_in_html
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
 #plugins:
 #  - privacy
@@ -91,6 +97,9 @@ nav:
     - how-to/password-hashing.md
     - how-to/password-validation.md
     - how-to/troubleshooting.md
+  - Explanation:
+    - explanation/index.md
+    - explanation/caveats.md
   - Reference:
     - reference/index.md
     - reference/options.md

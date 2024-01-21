@@ -9,14 +9,13 @@ import json
 import secrets
 import sys
 import time
-import uuid
 from datetime import date, timedelta, datetime
 
 from flask import Flask, session, redirect, render_template, request, \
     url_for, abort
-from sqlalchemy import Uuid
+from flask_session import Session
 
-from .db import db, init_db, Session, User, Token
+from .db import db, init_db, Revoked, User, Token
 from .devpwd import DevicePasswords
 from .oidc import OIDC
 from .pwdhash import hasher
@@ -44,6 +43,8 @@ def create_app():
     app.config["UI_SHOW_SUBJECT"] = True
     app.config["UI_SHOW_LAST_USED"] = True
     app.config["UI_NO_AWOO"] = False
+    app.config["SESSION_TYPE"] = "sqlalchemy"
+    app.config["SESSION_SQLALCHEMY"] = db
 
     app.config.from_prefixed_env("DP")
 
@@ -51,7 +52,7 @@ def create_app():
                 "SQLALCHEMY_DATABASE_URI"]:
         if not app.config.get(var):
             app.logger.error(f"{var} not set.")
-            exit(1)
+            raise ValueError(f"{var} not set.")
 
     try:
         hasher.hash("", scheme=app.config["PASSWORD_HASH"])
@@ -60,7 +61,7 @@ def create_app():
             f"Invalid password hash {app.config['PASSWORD_HASH']}",
             exc_info=sys.exc_info()
         )
-        exit(1)
+        raise
 
     try:
         int(app.config["PASSWORD_MAX_EXPIRATION_DAYS"])
@@ -70,27 +71,26 @@ def create_app():
             app.config['PASSWORD_MAX_EXPIRATION_DAYS'],
             exc_info=sys.exc_info()
         )
-        exit(1)
-
-    if not app.config.get("SECRET_KEY"):
-        app.logger.warning("No secret key set, generating a fresh one. "
-                           "Set one for a load balanced setup.")
-        app.config["SECRET_KEY"] = secrets.token_bytes(32)
+        raise
 
     init_db(app)
+    _ = Session(app)
 
     oidc = OIDC.from_app(app)
     for i in range(5):
         time.sleep(2**i-1)
         try:
             oidc.refresh_config()
-        except:
+        except Exception as e:
+            last = e
             app.logger.warning(f"Cannot connect to IdP (try {i+1}/5)",
                                exc_info=sys.exc_info())
         else:
             break
     else:
         app.logger.error("Cannot connect to IdP try (5/5).")
+        raise last
+
     # Manual overwriting keys here
     # Some IdPs may have different keys for consumer and business accounts,
     # and Oracle ICS instances would need authentication.
@@ -106,7 +106,6 @@ def create_app():
     def index():
         """Render the web interface or login."""
         if not valid_session(oidc):
-            session.clear()
             session["state"] = secrets.token_urlsafe(16)
             return redirect(oidc.get_login_uri(
                 session["state"], url_for("login", _external=True)
@@ -117,6 +116,7 @@ def create_app():
     @app.route("/login", methods=["GET", "POST"])
     def login():
         """Handle OpenID connect responses."""
+        print(session)
         if request.method == "GET":
             args = request.args
         else:
@@ -170,7 +170,9 @@ def create_app():
         email = session["email"]
 
         if sid := session.get("sid"):
-            destroy_session(None, sid)
+            destroy_session(sid)
+        else:
+            session.clear()
 
         if logout_url := oidc.get_logout_url(
                 token, email, url_for("index", _external=True)
@@ -210,12 +212,11 @@ def create_app():
         if iss and sid:
             if iss != oidc.config.get("iss"):
                 return abort(400, "Invalid issuer.")
-            destroy_session(None, sid)
-        else:
-            if sid := session.get("sid"):
-                destroy_session(None, sid)
-            else:
-                session.clear()
+            destroy_session(sid)
+        elif sid:
+            destroy_session(sid)
+
+        session.clear()
 
         return ""
 
@@ -250,11 +251,15 @@ def create_app():
         if not sid and not sub:
             app.logger.info("Sid or sub not present")
             abort(400)
+        if not sid:
+            app.logger.info("Sid not present (sub=%s)", sub)
+            return ""
 
         app.logger.info("Backchannel logout (sid=%s, sub=%s)",
                         sid or '-', sub or '-')
 
-        destroy_session(sub, sid)
+
+        destroy_session(sid)
         return ""
 
     @app.route("/api/tokens", methods=["GET", "POST", "DELETE"])

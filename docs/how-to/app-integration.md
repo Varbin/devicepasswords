@@ -2,30 +2,100 @@
 
 ## Dovecot
 
-To integrate dovecot with device passwords, 
-you do need to use a supported database.
-Grant the dovecot database user sufficient right to SELECT the users and tokens table.
-See [dovecot configuration manual](https://doc.dovecot.org/configuration_manual/authentication/password_schemes/) what password hashing algorithms are supported.
-The `ldap_sha512_crypt` hash does work.
-For general database integration you can use the [dovecot configuration manual](https://doc.dovecot.org/configuration_manual/authentication/sql/#user-iteration) regarding SQL.
+Dovecot separates user lookup (userdb) and password verification (passdb).
+Both user and password database to not need to be the same source.
+Therefore, it is possible to use e.g. LDAP for user lookup and the device password manager for authentication.
+Additionally, multiple password providers are supported.
+This makes it possible to seamlessly migrate.
 
-```postgresql
-SELECT 
-    users.email, users.username, tokens.token 
-FROM users
-LEFT OUTER JOIN tokens on users.sub = tokens.sub
-WHERE users.username = 'bla'
-;
-```
+!!! info "Dovecot documentation"
 
-An example SQL query to look up 
+     * [Authentication](https://doc.dovecot.org/configuration_manual/authentication/)
+     * [SQL](https://doc.dovecot.org/configuration_manual/authentication/sql/)
+     * [Password schemes](https://doc.dovecot.org/configuration_manual/authentication/password_schemes/)
 
-SELECT email as user, token as password 
-FROM users 
-LEFT OUTER JOIN tokens t ON users."primary" = t.user
-WHERE user = '%n'
-```
+Dovecot supports MySQL/MariaDB, PostgreSQL and SQLite.
+You need to install the respective extension.
+See [dovecot manual regarding password schemes](https://doc.dovecot.org/configuration_manual/authentication/password_schemes/) for the supported hashing algorithms.
+To support multiple hashes, you need to use prefixes for the password hashes.
+Otherwise, you can set the (default) hash with `default_pass_scheme`.
+This software currently only prefixes the `ldap_` variants.
 
-!!! warning "Untested configuration"
+!!! tip "Password query returned multiple matches"
 
-    This configuration has not been tested.
+     Password lookups must only a single entry for Dovecot.
+     As users can have multiple device passwords,
+     the query must validate the password.
+     As this is database specific, you may want to look at [database side password validation](password-validation.md).
+
+     This may make the use of challenge-response authentication – e.g. SCRAM or NTLM – with multiple device passwords impossible.   
+
+Below is a configuration example for _plaintext_ passwords. 
+
+=== "dovecot.conf"
+
+    ```
+    passdb {
+        driver = sql
+        args = /etc/dovecot/dovecot-sql.conf.ext
+    }
+    # If you have an old authentication scheme, you can leave it active while migrating.
+    # e.g.
+    #
+    # passdb {
+    #   driver = ldap
+    #   ...
+    # }
+    
+    # Optional, if you want to use it for user lookup
+    userdb {
+        driver = sql
+        args = /etc/dovecot/dovecot-sql.conf.ext
+    }
+    # Alternatively, use your existing user lookup.
+    ```
+
+=== "dovecot-sql.conf.ext (plaintext passwords)"
+
+    ```
+    driver = pgsql  # Database specific
+    connect = host=postgres dbname=postgres user=postgres password=postgres  # Can be specified multiple times for high availability.
+
+    password_query = SELECT users.username as username, tokens.token AS password FROM users LEFT OUTER JOIN tokens on users.sub = tokens.sub WHERE users.username = '%n' AND (expires IS NULL OR expires > NOW()) AND password = '%w'
+    user_query = SELECT username FROM users WHERE username = '%n'  # Only required for userdb
+    iterate_query = SELECT username FROM users  # Only required for userdb
+    ```
+
+=== "dovecot-sql-conf.ext (bcrypt passwords, PostgreSQL specific)"
+
+    ```
+    driver = pgsql  # Database specific
+    connect = host=postgres dbname=postgres user=postgres password=postgres  # Can be specified multiple times for high availability.
+
+    password_query = password_query = SELECT users.username as username, NULL AS password, 'Y' as nopassword FROM users LEFT OUTER JOIN tokens on users.sub = tokens.sub WHERE users.username = '%n' AND (expires IS NULL OR expires > NOW()) AND crypt('%w', REPLACE(tokens.token, '$2b$', '$2a$')) = REPLACE(tokens.token, '$2b', '$2a')
+    user_query = SELECT username FROM users WHERE username = '%n'  # Only required for userdb
+    iterate_query = SELECT username FROM users  # Only required for userdb
+    ```
+
+=== "dovecot-sql-conf.ext (database-side validation)"
+    See [database-side validation](password-validation.md).
+
+    ```
+    driver = pgsql  # Database specific
+    connect = host=postgres dbname=postgres user=postgres password=postgres  # Can be specified multiple times for high availability.
+
+    password_query = SELECT username, NULL as password, 'Y' as nopassword FROM verify_login('%n', '', '%w')
+    user_query = SELECT username FROM users WHERE username = '%n'  # Only required for userdb
+    iterate_query = SELECT username FROM users  # Only required for userdb
+    ```
+
+!!! warning "Validate your configuration in a test environment"
+
+     Dovecot will log queries with errors, including parameters.
+     To avoid accidential logging of your production passwords,
+     test your database integration in a test environment.
+
+
+## FreeRADIUS
+
+

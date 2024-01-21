@@ -1,3 +1,7 @@
+---
+icon: material/clock-fast
+---
+
 # Tutorial
 
 Following this tutorial you will set up an identity provider,
