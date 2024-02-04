@@ -29,12 +29,12 @@
             <div id="userinfo">
                 <p>
                     {% if session.get("name") %}
-                        {{ session.get("name") }} ({{ session.get("preferred_username") }})
+                        <bdi>{{ session.get("name") }}</bdi> (<bdi>{{ session.get("preferred_username") }}</bdi>)
                     {% else %}
-                        {{ session.get("preferred_username") }}
+                        <bdi>{{ session.get("preferred_username") }}</bdi>
                     {% endif %}
                     <br>
-                    {{ session.get("email") }} <br>
+                    <bdi>{{ session.get("email") }}</bdi><br>
                     <a href="{{ url_for("views.logout") }}?state={{ session["state"] }}" title="Log out from your identity provider.">Logout</a>
                 </p>
             {% if session.get("picture") %}
