@@ -53,4 +53,9 @@ Repository = "https://github.com/varbin/devicepasswords.git"
 Issues = "https://github.com/varbin/devicepasswords/issues"
 
 [tool.setuptools]
-packages = ["devicepasswords"]
+packages = [
+    "devicepasswords",
+    "devicepasswords.migrations",
+    "devicepasswords.static",
+    "devicepasswords.templates"
+]
