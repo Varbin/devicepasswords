@@ -1,5 +1,5 @@
 <h1><img src="docs/images/icon.svg" height="40"> Device password management</h1>
-<h3>Individual passwords for service without 2FA</h3>
+<h3>Individual passwords for services without 2FA</h3>
 
 <hr>
 <a href="https://github.com/Varbin/devicepasswords/actions/workflows/docker-image.yml">
@@ -13,8 +13,10 @@
 
 
 Device passwords fix the gap for accessing resources when clients do not support
-the companies single-sign on protocol. The most prominent example is e-mail, 
-where OAuth requires both server and client integration, which is usually not feasible.
+the companies single-sign-on protocol.
+The most prominent example is e-mail, 
+where OAuth requires both server and client integration,
+which is usually not feasible.
 
 This software allows users to manage their own device passwords.
 
