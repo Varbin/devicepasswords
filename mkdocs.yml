@@ -104,6 +104,7 @@ nav:
     - reference/index.md
     - reference/options.md
     - reference/database.md
+    - reference/logo.md
 
 extra_css:
   - stylesheets/extra.css
