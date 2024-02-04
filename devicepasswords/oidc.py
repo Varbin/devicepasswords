@@ -73,7 +73,15 @@ class OIDC:
         keys = []
         exceptions = []
         certs = obj["keys"]
-        for cert in certs:
+        # There can be unusable keys here
+        verifying = filter(
+            lambda k:
+                k["alg"] != "RSA-OAEP" and
+                k.get("use", "sig") == "sig" and
+                "verify" in k.get("key_ops", ["verify"]),
+            certs
+        )
+        for cert in verifying:
             try:
                 key = jwk.construct(cert)
             except JWKError as e:
