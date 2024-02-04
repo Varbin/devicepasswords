@@ -9,9 +9,8 @@ from datetime import datetime, timedelta
 
 from flask import current_app, abort, session
 
-from . import OIDC
 from .db import db, Revoked
-from .oidc import Redeemed
+from .oidc import Redeemed, OIDC
 
 logger = logging.getLogger(__name__)
 

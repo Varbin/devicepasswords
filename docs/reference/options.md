@@ -23,7 +23,9 @@ This is the list of supported variables:
 | `DP_UI_SHOW_SUBJECT`           | Show the subject identifier below the heading                                                                                           | true                                                               |
 | `DP_UI_SHOW_LAST_USED`         | Show last used timestamp for each device password. You must use database-side password validation for the last used time to be updated. | true                                                               |
 | `DP_UI_NO_AWOO`                | Do not display "Awooo!" after creating the device passwords. By default the system howls.                                               | false                                                              |
+| `DP_UI_LOGINS`                 | Show the unique login name generated for each device password. Enable if you integrated application uses this.                          | false                                                              |
 | `DP_MAX_EXPIRATION_DAYS`       | Maximum time in days a device password is valid. Any value ≤ 1 disables forced expiration.                                              | 0                                                                  |
+| `DP_DO_NOT_MIGRATE`            | Do not run automatic database migrations on app start. Use for development.                                                             | false                                                              |
 
 Additionally, the Docker supports the following options:
 

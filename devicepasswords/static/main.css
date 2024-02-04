@@ -146,18 +146,18 @@ input[type=checkbox] {
     flex-grow: 1;
 }
 
-.device-password {
+.device-credential {
     font-family: var(--font-devicepassword);
     user-select: contain;
 }
 
 .copy-password {
     user-select: none;
-    margin: var(--container-padding);
+    margin: 0 calc( var(--container-padding) / 2);
 }
 
 .copied {
-    margin: var(--container-padding);
+    margin: 0 calc( var(--container-padding) / 2);
     visibility: hidden;
     user-select: none;
 }

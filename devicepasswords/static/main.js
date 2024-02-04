@@ -108,47 +108,90 @@ async function deleteToken(e) {
     const _ = refresh()
 }
 
+function credentialElement(value, label) {
+    const credential = document.createElement("span")
+    credential.innerText = value
+    credential.ariaLabel = label
+    credential.className = "device-credential"
+    return credential
+}
+
+function copyCredentialMarker() {
+    const copied = document.createElement("span")
+    copied.innerText = "✓"
+    copied.className = "copied"
+    return copied
+}
+
+function copyCredentialButton() {
+    const button = document.createElement("a")
+    button.ariaLabel = "copy"
+    button.className = "copy-password"
+    button.href = "#"
+    button.innerText = "🗐"
+    return button
+}
+
 
 /**
  * Show a token.
  *
  * @param name
  * @param secret
+ * @param login
  */
-function showToken(name, secret) {
-    const devicePassword = document.createElement("span")
-    devicePassword.readOnly = true
-    devicePassword.innerText = secret
-    devicePassword.ariaLabel = "new password"
-    devicePassword.className = "device-password"
+function showToken(name, secret, login) {
+    const deviceLogin = credentialElement(login, "device username")
+    const devicePassword = credentialElement(secret, "device password")
 
-    const copied = document.createElement("span")
-    copied.innerText = "✓"
-    copied.className = "copied"
+    const copyLoginButton = copyCredentialButton()
+    const copyLoginMarker = copyCredentialMarker()
+    const copyPasswordButton = copyCredentialButton()
+    const copyPasswordMarker = copyCredentialMarker()
 
-    const button = document.createElement("a")
-    button.ariaLabel = "copy"
-    button.className = "copy-password"
-    button.href = "#"
-    button.onclick = async (e) => {
+    copyLoginButton.onclick = async (e) => {
+        e.preventDefault()
+        await navigator.clipboard.writeText(login)
+        copyLoginMarker.style.visibility = "visible"
+        copyPasswordMarker.style.visibility = "hidden"
+    }
+    copyPasswordButton.onclick = async (e) => {
         e.preventDefault()
         await navigator.clipboard.writeText(secret)
-        copied.style.visibility = "visible"
+        copyLoginMarker.style.visibility = "hidden"
+        copyPasswordMarker.style.visibility = "visible"
     }
-    button.innerText = "🗐"
 
     const container = document.createElement("div")
     container.replaceChildren(
         config.no_awoo ? "" : "Awoo! ",
         "Here is your new device password. ",
         "Copy the password now, as you cannot see it later.",
-        document.createElement("br"),
-        button,
-        devicePassword,
-        copied,
-        document.createElement("br"),
-
+        document.createElement("br")
     )
+    if (config.logins) {
+        const username = document.createElement("span")
+        username.innerText = "Username: "
+        username.className = "device-credential-description"
+        const password = document.createElement("span")
+        password.innerText = "Password: "
+        password.className = "device-credential-description "
+        container.append(
+            username,
+            copyLoginButton,
+            deviceLogin,
+            copyLoginMarker,
+            document.createElement("br"),
+            password
+        )
+    }
+    container.append(
+        copyPasswordButton,
+        devicePassword,
+        copyPasswordMarker,
+        document.createElement("br"),
+    )
+
     createNotification(container)
 }
 
@@ -178,7 +221,7 @@ form.onsubmit = async (e) => {
 
     const _ = refresh()
 
-    showToken(retrieved.name, retrieved.secret)
+    showToken(retrieved.name, retrieved.secret, retrieved.login)
 }
 form.expires.onchange = (e) => {
     form.expiration.disabled = !e.currentTarget.checked

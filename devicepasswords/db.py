@@ -7,6 +7,8 @@ from datetime import datetime
 from typing import List
 
 from flask import current_app, Flask
+# from flask_alembic import Alembic
+from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 
 from sqlalchemy import Integer, String, ForeignKey, DateTime, Uuid
@@ -37,6 +39,7 @@ class Token(db.Model):
     id: Mapped[Uuid] = mapped_column(Uuid, primary_key=True,
                                      default=uuid.uuid4)
     sub: Mapped[str] = mapped_column(ForeignKey("users.sub"))
+    login: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     name: Mapped[str] = mapped_column(String, nullable=False)
     token: Mapped[str] = mapped_column(String, nullable=False)
     expires: Mapped[datetime] = mapped_column(DateTime, nullable=True)
@@ -54,15 +57,3 @@ class Revoked(db.Model):
     __tablename__ = "revoked"
 
     sid: Mapped[str] = mapped_column(String, primary_key=True)
-
-    #sub: Mapped[str] = mapped_column(String, nullable=False)
-    #id_token: Mapped[str] = mapped_column(String, nullable=False)
-    #refresh_token: Mapped[str] = mapped_column(String, nullable=True)
-    #refresh_token_expiration: Mapped[datetime] = mapped_column(DateTime,
-    #                                                           nullable=True)
-
-
-def init_db(app: Flask):
-    db.init_app(app)
-    with app.app_context():
-        db.create_all()

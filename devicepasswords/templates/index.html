@@ -8,16 +8,18 @@
 
     <link rel="icon" href="{{ url_for("static", filename="icon.svg") }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for("static", filename="vars.css") }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for("static", filename="extra.css") }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for("static", filename="main.css") }}">
 
-    <meta name="api_tokens" content="{{ url_for("tokens") }}">
-    <meta name="api_ping" content="{{ url_for("ping") }}">
+    <meta name="api_tokens" content="{{ url_for("views.tokens") }}">
+    <meta name="api_ping" content="{{ url_for("views.ping") }}">
     <script>
         const config = {
-            "api_tokens": {{ url_for("tokens") | tojson }},
-            "api_ping": {{ url_for("ping") | tojson }},
+            "api_tokens": {{ url_for("views.tokens") | tojson }},
+            "api_ping": {{ url_for("views.ping") | tojson }},
             "no_awoo": {{ config["UI_NO_AWOO"] | tojson }},
-            "show_last_used": {{ config["UI_SHOW_LAST_USED"] | tojson }}
+            "show_last_used": {{ config["UI_SHOW_LAST_USED"] | tojson }},
+            "logins": {{ config["UI_LOGINS"] | tojson }},
         }
     </script>
 </head>
@@ -33,7 +35,7 @@
                     {% endif %}
                     <br>
                     {{ session.get("email") }} <br>
-                    <a href="{{ url_for("logout") }}?state={{ session["state"] }}" title="Log out from your identity provider.">Logout</a>
+                    <a href="{{ url_for("views.logout") }}?state={{ session["state"] }}" title="Log out from your identity provider.">Logout</a>
                 </p>
             {% if session.get("picture") %}
                 <img src="{{ session.get("picture") }}" alt="{{ session.get("name") }}">

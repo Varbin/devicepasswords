@@ -28,11 +28,11 @@ class OIDC:
     keys = []
     config = {}
 
-    def __init__(self, configuration_url: str, client_id: str, client_secret: str):
-        self.configuration_url = configuration_url
-        self.client_id = client_id
-        self.client_secret = client_secret
+    configuration_url: str
+    client_id: str
+    client_secret: str
 
+    def __init__(self):
         self.session = requests.Session()
 
     @property
@@ -218,10 +218,10 @@ class OIDC:
 
         return claims, None
 
-    @classmethod
-    def from_app(cls, app: Flask):
-        return cls(
-            app.config["OIDC_DISCOVERY_URL"],
-            app.config["OIDC_CLIENT_ID"],
-            app.config["OIDC_CLIENT_SECRET"]
-        )
+    def init_app(self, app: Flask) -> None:
+        self.configuration_url = app.config["OIDC_DISCOVERY_URL"]
+        self.client_id = app.config["OIDC_CLIENT_ID"]
+        self.client_secret = app.config["OIDC_CLIENT_SECRET"]
+
+
+oidc = OIDC()

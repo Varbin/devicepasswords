@@ -9,17 +9,20 @@ elements can be customized by setting the appropriate variables:
 - `DP_UI_HEADING_SUB`: Add a subtext after "Device Passwords", none by default
 - `DP_UI_SUB`: Show the subject identifier below the heading, on by default.
 - `DP_UI_LAST_USED`: Show last used timestamp for each device password, disabled by default. You must use database-side password validation for the last used time to be updated.
-- `DP_UI_NO_AWOO`: Do not display "Awooo!" after creating the device passwords. By default the system howls.
+- `DP_UI_LOGINS`: Show the unique login name generated for each device password. Enable if you integrated application uses this. By default, this is hidden.
+- `DP_UI_NO_AWOO`: Do not display "Awooo!" after creating the device passwords. By default, the system howls.
 
 The following picture displays each element: 
 
 ![](../images/ui.svg)
 
+
+
 ## Using a custom style
 
-The theme colors are define in the `extra.css` file.
-Simply bind-mount an alternate version into the docker container to override it.
-The following shows the default:
+The theme colors are defined in the `vars.css` file.
+Store and bind-mount your overrides as `extra.css` into the docker container.
+The following shows the default values:
 
 ```css
 :root {

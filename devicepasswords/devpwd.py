@@ -12,33 +12,46 @@ wordlist = []
 
 class DevicePasswords:
     """Device password generator from list."""
-    def __init__(self, words: list[str], digits=5, entropy=64):
-        self.secure = random.SystemRandom()
-        self.words = words
+    secure = random.SystemRandom()
+    wordcount: int
+
+    def __init__(self, words: list[str] = None, digits=5, entropy=64):
+        self.words = words or []
 
         self.digits = digits
+        self.entropy = entropy
+        if words:
+            self.calculate_wordcount()
+
+    def calculate_wordcount(self):
+        """Calculate the required words."""
         self.wordcount = int(math.ceil(
-            (entropy - math.log2(10) * digits) / math.log2(len(words))
+            (self.entropy - math.log2(10) * self.digits) /
+             math.log2(len(self.words))
         ))
 
     def generate(self) -> str:
         """Generate device password consisting of words and numbers, joined by
         dashes."""
-        suffix = "".join(
-            str(self.secure.randint(0, 9)) for _ in range(self.digits)
-        )
-
         return "-".join(
             self.secure.choice(self.words).strip() for _ in range(
                 self.wordcount
             )
-        ) + "-" + suffix
+        ) + "-" + self.random_digits(self.digits)
+
+    def init_app(self, app: Flask) -> None:
+        with open(app.config["WORDLIST"]) as wl:
+            self.words = [line.strip() for line in wl.readlines()]
+
+        self.entropy = app.config["PASSWORD_ENTROPY"]
+        self.calculate_wordcount()
 
     @classmethod
-    def from_app(cls, app: Flask):
-        """Creates DevicePasswords instance from a Flask application where
-        the config parameter WORDLIST is set to a line separated list of words.
-        """
-        with open(app.config["WORDLIST"]) as wl:
-            return cls([line.strip() for line in wl.readlines()],
-                       entropy=app.config["PASSWORD_ENTROPY"])
+    def random_digits(cls, amount: int) -> str:
+        """Generates 'amount' random digits."""
+        return "".join(
+            str(cls.secure.randint(0, 9)) for _ in range(amount)
+        )
+
+
+device_passwords = DevicePasswords()

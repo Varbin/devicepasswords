@@ -8,7 +8,7 @@ async function sleep(timeout) {
 
 (async () => {
    for (;;) {
-       await sleep(10000)
+       await sleep(30000)
        try {
            const response = await (await fetch(ping_api)).json()
            if (!response.pong) {
