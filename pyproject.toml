@@ -46,5 +46,11 @@ dependencies = [
 ]
 dynamic = ["version"]
 
+[project.urls]
+Homepage = "https://github.com/varbin/devicepasswords"
+Documentation = "https://devicepasswords.readthedocs.io/"
+Repository = "https://github.com/varbin/devicepasswords.git"
+Issues = "https://github.com/varbin/devicepasswords/issues"
+
 [tool.setuptools]
 packages = ["devicepasswords"]
