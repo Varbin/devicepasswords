@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools >= 61.0", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "devicepasswords"
+authors = [
+    {name = "Varbin the Fox"}
+]
+description = "Simple device password management to replace regular password for systems not capable of single sign-on. "
+readme = "README.md"
+requires-python = ">=3.11"
+keywords = ["python", "docker", "flask", "oidc", "single-sign-on", "devicepassword"]
+license = {text = "MPL-2.0"}
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: Flask",
+    "Framework :: aiohttp",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
+    "Topic :: Security",
+    "Topic :: System :: Systems Administration :: Authentication/Directory",
+]
+dependencies = [
+    "flask >= 3.0.0",
+    "flask-sqlalchemy",
+    "flask-alembic",
+    "python-jose[cryptography]",
+    "requests",
+    "gevent>1.4",
+    "flask-session",
+    # Password hashing
+    "passlib",
+    "argon2-cffi",
+    # Database drivers
+    "psycopg2-binary",
+    "pymysql",
+    "pymssql",
+    # Server for production
+    "gunicorn",
+]
+dynamic = ["version"]
+
+[tool.setuptools]
+packages = ["devicepasswords"]
