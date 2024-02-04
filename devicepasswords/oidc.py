@@ -46,6 +46,12 @@ class OIDC:
 
         self._refresh = new_bool
 
+    @property
+    def supports_frontchannel_logout(self):
+        """Check if frontchannel logout is supported."""
+        return oidc.config.get("http_logout_supported") or \
+               oidc.config.get("frontchannel_logout_supported")
+
     def refresh_config(self) -> dict:
         """Refresh the configuration from the OIDC provider."""
         response = self.session.get(self.configuration_url)

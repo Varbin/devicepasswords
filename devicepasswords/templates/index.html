@@ -13,7 +13,7 @@
 
     <meta name="api_tokens" content="{{ url_for("views.tokens") }}">
     <meta name="api_ping" content="{{ url_for("views.ping") }}">
-    <script>
+    <script nonce="{{ g.nonce }}">
         const config = {
             "api_tokens": {{ url_for("views.tokens") | tojson }},
             "api_ping": {{ url_for("views.ping") | tojson }},
@@ -80,7 +80,7 @@
         </main>
     </div>
 
-    <script src="{{ url_for('static', filename="main.js") }}" async defer></script>
-    <script src="{{ url_for('static', filename="ping.js") }}" async defer></script>
+    <script src="{{ url_for('static', filename="main.js") }}" async defer nonce="{{ g.nonce }}"></script>
+    <script src="{{ url_for('static', filename="ping.js") }}" async defer nonce="{{ g.nonce }}"></script>
 </body>
 </html>

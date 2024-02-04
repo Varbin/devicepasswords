@@ -116,8 +116,7 @@ def frontchannel_logout():
     # New standard:
     # https://openid.net/specs/openid-connect-frontchannel-1_0.html
     # That is why there are to variables ^^
-    if (not oidc.config.get("http_logout_supported") and
-            not oidc.config.get("frontchannel_logout_supported")):
+    if not oidc.supports_frontchannel_logout:
         return abort(400, "Feature not supported.")
 
     sid = request.args.get("sid")

@@ -151,6 +151,12 @@ input[type=checkbox] {
     user-select: contain;
 }
 
+.device-credential-description {
+    display: inline-block;
+    width: 10ex;
+    user-select: none;
+}
+
 .copy-password {
     user-select: none;
     margin: 0 calc( var(--container-padding) / 2);

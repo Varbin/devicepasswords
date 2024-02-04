@@ -14,6 +14,7 @@ from flask_session import Session
 
 from .db import db, Revoked, User, Token
 from .devpwd import DevicePasswords, device_passwords
+from .headers import add_security_headers, add_nonce
 from .oidc import OIDC, oidc
 from .pwdhash import hasher
 from .smgmt import valid_session, update_session, destroy_session, \
@@ -24,6 +25,7 @@ from .views import views
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping({
+        "HSTS": False,
         "WORDLIST": "wordlist.txt",
         "OIDC_CLAIM_EMAIL": "email",
         "OIDC_CLAIM_EMAIL_VERIFIED": "email_verified",
@@ -114,4 +116,8 @@ def create_app():
     oidc.refresh = True  # Automatically reload in background.
 
     device_passwords.init_app(app)
+
+    app.before_request(add_nonce)
+    app.after_request(add_security_headers)
+
     return app
