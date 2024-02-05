@@ -1,10 +1,12 @@
+import asyncio
 import http
 import secrets
 import uuid
 
 from datetime import datetime, date, timedelta
 
-from flask import (g, request, redirect, render_template, url_for, session,
+from asgiref.sync import sync_to_async
+from flask import (request, redirect, render_template, url_for, session,
                    abort, current_app)
 from flask.blueprints import Blueprint
 from sqlalchemy import func
@@ -19,9 +21,9 @@ views = Blueprint('views', __name__)
 
 
 @views.route("/")
-def index():
+async def index():
     """Render the web interface or login."""
-    if not valid_session(oidc):
+    if not (await valid_session(oidc)):
         session["state"] = secrets.token_urlsafe(16)
         return redirect(oidc.get_login_uri(
             session["state"], url_for("views.login", _external=True)
@@ -31,7 +33,7 @@ def index():
 
 
 @views.route("/login", methods=["GET", "POST"])
-def login():
+async def login():
     """Handle OpenID connect responses."""
     if request.method == "GET":
         args = request.args
@@ -44,7 +46,7 @@ def login():
     if not (code := args.get("code")):
         abort(400)
 
-    redeemed, e = oidc.redeem_code(
+    redeemed, e = await oidc.redeem_code(
         code, url_for("views.login", _external=True)
     )
     if e is not None:
@@ -65,17 +67,17 @@ def login():
         session.get("sid", "-")
     )
 
-    user = db.session.get(User, session["sub"]) or User(sub=session["sub"])
+    user = (await sync_to_async(db.session.get)(User, session["sub"])) or User(sub=session["sub"])
     user.username = session["preferred_username"]
     user.email = session["email"]
     db.session.add(user)
-    db.session.commit()
+    await sync_to_async(db.session.commit)()
 
     return redirect(url_for("views.index"))
 
 
 @views.route("/logout")
-def logout():
+async def logout():
     """Clear the session."""
     if session.get("state") != request.args.get("state"):
         current_app.logger.warning("Invalid session.")
@@ -87,11 +89,11 @@ def logout():
     email = session["email"]
 
     if sid := session.get("sid"):
-        destroy_session(sid)
+        await destroy_session(sid)
     else:
         session.clear()
 
-    if logout_url := oidc.get_logout_url(
+    if logout_url := await oidc.get_logout_url(
             token, email, url_for("views.index", _external=True)
     ):
         return redirect(logout_url)
@@ -100,15 +102,16 @@ def logout():
 
 
 @views.route("/api/ping")
-def ping():
-    return {"pong": valid_session(oidc)}
+async def ping():
+    """Return true if logged in."""
+    return {"pong": await valid_session(oidc)}
 
 
 @views.route("/api/logout-frontchannel")
-def frontchannel_logout():
+async def frontchannel_logout():
     """
     Implement a 'front channel' logout that is initiated on the IdP page.
-    Is only active, if the IdP supports it.
+    Is only active if the IdP supports it.
     """
 
     # Old standard:
@@ -130,9 +133,9 @@ def frontchannel_logout():
     if iss and sid:
         if iss != oidc.config.get("iss"):
             return abort(400, "Invalid issuer.")
-        destroy_session(sid)
+        await destroy_session(sid)
     elif sid:
-        destroy_session(sid)
+        await destroy_session(sid)
 
     session.clear()
 
@@ -140,7 +143,7 @@ def frontchannel_logout():
 
 
 @views.route("/api/logout-backchannel", methods=["POST"])
-def backchannel_logout():
+async def backchannel_logout():
     """
     Implement a 'back channel' logout that can be called by the
     IdP on user logout.
@@ -176,24 +179,24 @@ def backchannel_logout():
     current_app.logger.info("Backchannel logout (sid=%s, sub=%s)",
                     sid or '-', sub or '-')
 
-    destroy_session(sid)
+    await destroy_session(sid)
     return ""
 
 
 @views.route("/api/tokens", methods=["GET", "POST", "DELETE"])
-def tokens():
+async def tokens():
     """Token endpoint."""
-    if not valid_session(oidc):
+    if not (await valid_session(oidc)):
         current_app.logger.warning("Invalid session.")
         session.clear()
         abort(403)
 
     match request.method:
         case "GET":
-            user_tokens = db.session.execute(
+            user_tokens = (await sync_to_async(db.session.execute)(
                 db.select(Token)
                 .filter_by(sub=session["sub"])
-            ).scalars() or []
+            )).scalars() or []
             return [
                 {
                     "id": token.id,
@@ -226,10 +229,10 @@ def tokens():
                     f"{session['preferred_username']}#"
                     f"{DevicePasswords.random_digits(3)}"
                 )
-                present = db.session.execute(
+                present = (await sync_to_async(db.session.execute)(
                     db.select(func.count())
                       .select_from(Token)
-                      .filter_by(login=likely_unique)).scalar()
+                      .filter_by(login=likely_unique))).scalar()
                 if not present:
                     break
             else:
@@ -247,7 +250,7 @@ def tokens():
                 login=likely_unique,
             )
             db.session.add(t)
-            db.session.commit()
+            await sync_to_async(db.session.commit)()
             return {
                 "status": "ok",
                 "login": likely_unique,
@@ -256,16 +259,16 @@ def tokens():
             }
 
         case "DELETE":
-            token = db.session.execute(
+            token = (await sync_to_async(db.session.execute)(
                 db.select(Token)
                 .filter_by(
                     sub=session["sub"],
                     id=uuid.UUID(request.form.get("id")))
-            ).scalar_one_or_none()
+            )).scalar_one_or_none()
             if token is None:
                 abort(404)
             db.session.delete(token)
-            db.session.commit()
+            await sync_to_async(db.session.commit)()
             return {
                 "id": token.id,
                 "name": token.name,

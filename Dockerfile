@@ -9,4 +9,4 @@ COPY devicepasswords/ devicepasswords
 COPY wordlist.txt .
 COPY wordlist-de.txt .
 
-ENTRYPOINT ["gunicorn", "-b", "0.0.0.0:5000", "devicepasswords:create_app()"]
+ENTRYPOINT ["gunicorn", "-b", "0.0.0.0:5000", "-k", "uvicorn.workers.UvicornWorker", "devicepasswords:create_asgi()"]

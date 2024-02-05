@@ -3,14 +3,15 @@
 OIDC implementation.
 """
 import _thread
+import asyncio
 import logging
 import sys
 import time
 from collections import namedtuple
 from urllib.parse import urlparse, parse_qs, urlencode
 
-import requests
-from flask import Flask
+import aiohttp
+from flask import Flask, current_app, g
 from jose import JWTError
 from jose import jwt, jwk
 from jose.exceptions import JWTClaimsError, ExpiredSignatureError, JWKError
@@ -22,7 +23,10 @@ Redeemed = namedtuple('Redeemed', ['id_token', 'expires_in',
 
 
 class OIDC:
-    """OpenID Connect implementation."""
+    """OpenID Connect implementation.
+
+    This implementation is bound to flask and a running flask app.
+    """
     _refresh = False
 
     keys = []
@@ -32,11 +36,17 @@ class OIDC:
     client_id: str
     client_secret: str
 
-    def __init__(self):
-        self.session = requests.Session()
+    @property
+    def session(self):
+        """Return a session for the current request."""
+        if 'aiohttp_session' not in g:
+            g.aiohttp_session = aiohttp.ClientSession()
+
+        return g.aiohttp_session
 
     @property
     def refresh(self):
+        """Enable continuous background refresh."""
         return self._refresh
 
     @refresh.setter
@@ -49,36 +59,37 @@ class OIDC:
     @property
     def supports_frontchannel_logout(self):
         """Check if frontchannel logout is supported."""
-        return oidc.config.get("http_logout_supported") or \
-               oidc.config.get("frontchannel_logout_supported")
+        return self.config.get("http_logout_supported") or \
+            self.config.get("frontchannel_logout_supported")
 
-    def refresh_config(self) -> dict:
+    async def refresh_config(self) -> dict:
         """Refresh the configuration from the OIDC provider."""
-        response = self.session.get(self.configuration_url)
-        response.raise_for_status()
-        config = response.json()
-        self.config = config
-        return config
+        async with aiohttp.request('GET', self.configuration_url) as response:
+            response.raise_for_status()
+            config = await response.json()
+            self.config = config
+            return config
 
-    def refresh_keys(self) -> list:
+    async def refresh_keys(self):
         """Refresh the configuration from the OIDC provider.
 
         :raise ExceptionGroup of JWK errors, or a value error.
         """
-        cert_response = self.session.get(self.config["jwks_uri"])
-        cert_response.raise_for_status()
-        self.set_keys(cert_response.json())
+        async with aiohttp.request('get', self.config["jwks_uri"]) as response:
+            response.raise_for_status()
+            self.set_keys(await response.json())
 
     def set_keys(self, obj):
+        """Update the keys of the OIDC provider"""
         keys = []
         exceptions = []
         certs = obj["keys"]
         # There can be unusable keys here
         verifying = filter(
             lambda k:
-                k["alg"] != "RSA-OAEP" and
-                k.get("use", "sig") == "sig" and
-                "verify" in k.get("key_ops", ["verify"]),
+            k["alg"] != "RSA-OAEP" and
+            k.get("use", "sig") == "sig" and
+            "verify" in k.get("key_ops", ["verify"]),
             certs
         )
         for cert in verifying:
@@ -100,36 +111,36 @@ class OIDC:
             time.sleep(3600)
 
             try:
-                _ = self.refresh_config()
-            except:
+                _ = asyncio.run(self.refresh_config())
+            except:  # noqa: E722
                 logging.getLogger(__name__).error("Cannot refresh config.",
                                                   exc_info=sys.exc_info())
 
             try:
-                _ = self.refresh_keys()
-            except:
+                _ = asyncio.run(self.refresh_keys())
+            except:  # noqa: E722
                 logging.getLogger(__name__).error("Cannot refresh keys.",
                                                   exc_info=sys.exc_info())
 
-    def _redeem(self, token_data) -> tuple[Redeemed, Exception | None]:
-        auth = ()
+    async def _redeem(self, token_data) -> tuple[Redeemed, Exception | None]:
+        auth = None
         if not self.client_secret:
             token_data["client_id"] = self.client_id
         elif "client_secret_post" not in \
-                 self.config.get("token_endpoint_auth_methods_supported", ()):
+                self.config.get("token_endpoint_auth_methods_supported", ()):
             token_data["client_id"] = self.client_id
             auth = (self.client_id, self.client_secret)
         else:
             token_data["client_id"] = self.client_id
             token_data["client_secret"] = self.client_secret
 
-        token_response = self.session.post(self.config["token_endpoint"],
-                                           data=token_data, auth=auth)
+        token_response = await self.session.post(self.config["token_endpoint"],
+                                                 data=token_data, auth=auth)
         try:
             token_response.raise_for_status()
         except IOError as e:
-            return Redeemed(None, 0, None, 0, {}), e
-        token_json = token_response.json()
+            return Redeemed(None, 0, None, 0, {}, {}), e
+        token_json = await token_response.json()
 
         claims, e = self.validate_token(
             token_json["id_token"],
@@ -137,14 +148,14 @@ class OIDC:
         )
 
         if e is not None:
-            return Redeemed(None, 0, None, 0, {}), e
+            return Redeemed(None, 0, None, 0, {}, {}), e
 
         profile = {}
         if at := token_json.get("access_token"):
-            profile = requests.get(
+            profile = await (await self.session.get(
                 self.config["userinfo_endpoint"],
                 headers={"Authorization": f"Bearer {at}"}
-            ).json()
+            )).json()
 
         return Redeemed(
             token_json["id_token"],
@@ -154,16 +165,18 @@ class OIDC:
             claims, profile
         ), None
 
-    def redeem_refresh(self, code) -> tuple[Redeemed, Exception | None]:
-        return self._redeem({
+    async def redeem_refresh(self, code) -> tuple[Redeemed, Exception | None]:
+        """Redeem a refresh token to claims and userinfo."""
+        return await self._redeem({
             "grant_type": "refresh_token",
             "refresh_token": code,
             "scope": "openid email profile",
         })
 
-    def redeem_code(self, code, redirect_uri) -> \
+    async def redeem_code(self, code, redirect_uri) -> \
             tuple[Redeemed, Exception | None]:
-        return self._redeem({
+        """Redeem an access token to claims and userinfo."""
+        return await self._redeem({
             "grant_type": "authorization_code",
             "code": code,
             "redirect_uri": redirect_uri
@@ -182,11 +195,11 @@ class OIDC:
         query["client_id"] = self.client_id
         if "form_post" in self.config.get("response_modes_supported", ()):
             query["response_mode"] = "form_post"
-        #else:
+        # else:
         #    query["response_mode"] = "query"
         return auth_url._replace(query=urlencode(query)).geturl()
 
-    def get_logout_url(self, id_token, email, post_logout) -> str|None:
+    def get_logout_url(self, id_token, email, post_logout) -> str | None:
         """
         Return a logout url for an id token and an email address as a
         logout hint.
@@ -236,6 +249,14 @@ class OIDC:
         self.configuration_url = app.config["OIDC_DISCOVERY_URL"]
         self.client_id = app.config["OIDC_CLIENT_ID"]
         self.client_secret = app.config["OIDC_CLIENT_SECRET"]
+
+        app.teardown_request(self._teardown)
+
+    async def _teardown(self, request):
+        if session := g.pop("aiohttp_session", None):
+            await session.close()
+
+
 
 
 oidc = OIDC()

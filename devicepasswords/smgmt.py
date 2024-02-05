@@ -7,6 +7,7 @@ import secrets
 import time
 from datetime import datetime, timedelta
 
+from asgiref.sync import sync_to_async
 from flask import current_app, abort, session
 
 from .db import db, Revoked
@@ -15,34 +16,37 @@ from .oidc import Redeemed, OIDC
 logger = logging.getLogger(__name__)
 
 
-def valid_session(oidc: OIDC) -> bool:
-    """Return if a session is valid."""
+async def valid_session(oidc: OIDC) -> bool:
+    """Return if a session is valid, refresh if short to expire."""
     if not session.get("sub"):
         return False
 
-    expired = session.get("exp", 0) < time.time()
-
-    if not (sid := session.get("sid")):
-        return not expired
-
-    if db.session.get(Revoked, sid) is not None:
+    valid_for = session.get("exp", 0) - time.time()
+    if valid_for < 0:
         return False
 
-    if expired and (
-            not session.get("refresh_token") or (
-                session.get("refresh_token_expiration") is not None and
-                session.get("refresh_token_expiration") < datetime.now()
-    )):
-        return False
+    # Test if session was revoked by IdP
+    if sid := session.get("sid"):
+        if (await sync_to_async(db.session.get)(Revoked, sid)) is not None:
+            return False
+
+    if valid_for > 30:  # TODO: Make configurable
+        return True
+
+    if (not session.get("refresh_token") or (
+        session.get("refresh_token_expiration") is not None and
+        session.get("refresh_token_expiration") < datetime.now())):
+        # Cannot refresh session, but is still valid.
+        return True
 
     current_app.logger.info("Refreshing session (sid=%s)" % sid)
-    redeemed, e = oidc.redeem_refresh(session.get("refresh_token"))
+    redeemed, e = await oidc.redeem_refresh(session.get("refresh_token"))
     if e is not None:
         current_app.logger.warning(
             "Refreshing failed (sid=%s)" % sid,
             exc_info=(type(e), e, e.__traceback__)
         )
-        destroy_session(sid=sid)
+        await destroy_session(sid=sid)
         return False
 
     current_app.logger.info("Refreshing successful (sid=%s)" % sid)
@@ -62,12 +66,12 @@ def valid_session(oidc: OIDC) -> bool:
     return True
 
 
-def destroy_session(sub=None, sid=None):
+async def destroy_session(sub=None, sid=None):
     session.clear()
 
     if sid:
         db.session.add(Revoked(sid=sid))
-        db.session.commit()
+        await sync_to_async(db.session.commit)()
 
 
 def new_session(redeemed: Redeemed):

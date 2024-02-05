@@ -6,11 +6,7 @@ import uuid
 from datetime import datetime
 from typing import List
 
-from flask import current_app, Flask
-# from flask_alembic import Alembic
-from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
-
 from sqlalchemy import Integer, String, ForeignKey, DateTime, Uuid
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 

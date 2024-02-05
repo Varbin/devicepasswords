@@ -31,8 +31,6 @@ dependencies = [
     "flask-sqlalchemy",
     "flask-alembic",
     "python-jose[cryptography]",
-    "requests",
-    "gevent>1.4",
     "flask-session",
     # Password hashing
     "passlib",
@@ -43,6 +41,9 @@ dependencies = [
     "pymssql",
     # Server for production
     "gunicorn",
+    "uvicorn",
+    "asgiref",
+    "aiohttp[speedups]"
 ]
 dynamic = ["version"]
 

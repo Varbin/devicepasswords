@@ -4,21 +4,22 @@ Device password manager.
 
 @author Varbin the Fox.
 """
+import asyncio
 import json
 import sys
 import time
 
+from asgiref.sync import async_to_sync
+from asgiref.wsgi import WsgiToAsgi
 from flask import Flask
 from flask_alembic import Alembic
 from flask_session import Session
 
-from .db import db, Revoked, User, Token
-from .devpwd import DevicePasswords, device_passwords
+from .db import db
+from .devpwd import device_passwords
 from .headers import add_security_headers, add_nonce
-from .oidc import OIDC, oidc
+from .oidc import oidc
 from .pwdhash import hasher
-from .smgmt import valid_session, update_session, destroy_session, \
-    new_session
 from .views import views
 
 
@@ -68,7 +69,7 @@ def create_app():
         int(app.config["PASSWORD_MAX_EXPIRATION_DAYS"])
     except TypeError:
         app.logger.error(
-            f"Invalid expiration date value " +
+            "Invalid expiration date value " +
             app.config['PASSWORD_MAX_EXPIRATION_DAYS'],
             exc_info=sys.exc_info()
         )
@@ -94,7 +95,7 @@ def create_app():
     for i in range(5):
         time.sleep(2 ** i - 1)
         try:
-            oidc.refresh_config()
+            asyncio.run(oidc.refresh_config())
         except Exception as e:
             last = e
             app.logger.warning(f"Cannot connect to IdP (try {i + 1}/5)",
@@ -112,7 +113,7 @@ def create_app():
         with open(keyfile) as kf:
             oidc.set_keys(json.load(kf))
     else:
-        oidc.refresh_keys()
+        asyncio.run(oidc.refresh_keys())
     oidc.refresh = True  # Automatically reload in background.
 
     device_passwords.init_app(app)
@@ -121,3 +122,7 @@ def create_app():
     app.after_request(add_security_headers)
 
     return app
+
+
+def create_asgi():
+    return WsgiToAsgi(create_app())
