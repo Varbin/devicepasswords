@@ -19,18 +19,23 @@ You need to install the respective extension.
 See [dovecot manual regarding password schemes](https://doc.dovecot.org/configuration_manual/authentication/password_schemes/) for the supported hashing algorithms.
 To support multiple hashes, you need to use prefixes for the password hashes.
 Otherwise, you can set the (default) hash with `default_pass_scheme`.
-This software currently only prefixes the `ldap_` variants.
+This software currently only prefixes the `ldap_` and `dovecot_` variants.
+For SCRAM authentication,
+either user plaintext or the Dovecot specific `dovecot_scram_sha<bits>` hashes.
 
 !!! tip "Password query returned multiple matches"
 
      Password lookups must only a single entry for Dovecot.
-     As users can have multiple device passwords,
-     the query must validate the password.
+
+     One solution is to use unique login names (see [interface customization](interface.md)),
+     and return the original username.
+     Another solution is to validate the password in the query itself.
      As this is database specific, you may want to look at [database side password validation](password-validation.md).
 
      This may make the use of challenge-response authentication – e.g. SCRAM or NTLM – with multiple device passwords impossible.   
 
-Below is a configuration example for _plaintext_ passwords. 
+Below are some configuration examples.
+
 
 === "dovecot.conf"
 
@@ -55,13 +60,13 @@ Below is a configuration example for _plaintext_ passwords.
     # Alternatively, use your existing user lookup.
     ```
 
-=== "dovecot-sql.conf.ext (plaintext passwords)"
+=== "dovecot-sql.conf.ext (unique login name)"
 
     ```
     driver = pgsql  # Database specific
     connect = host=postgres dbname=postgres user=postgres password=postgres  # Can be specified multiple times for high availability.
 
-    password_query = SELECT users.username as username, tokens.token AS password FROM users LEFT OUTER JOIN tokens on users.sub = tokens.sub WHERE users.username = '%n' AND (expires IS NULL OR expires > NOW()) AND password = '%w'
+    password_query = SELECT users.username as username, tokens.token AS password FROM users LEFT OUTER JOIN tokens on users.sub = tokens.sub WHERE users.login = '%n' AND (expires IS NULL OR expires > NOW())'
     user_query = SELECT username FROM users WHERE username = '%n'  # Only required for userdb
     iterate_query = SELECT username FROM users  # Only required for userdb
     ```

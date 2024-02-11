@@ -61,7 +61,7 @@ General hashes:
    Prefixed with `{S<hash>}` (e.g. `{SMD5}`).
  - `md5_crypt`, `sha1_crypt`, `sha256_crypt`, `sha512_crypt`, `ldap_..._crypt`: 
    These are the respective UNIX crypt algorithms. 
-   The SHA256 and SHA512 variants are considered a modern algorithms.  
+   The SHA256 and SHA512 variants are considered modern algorithms.  
    All LDAP variants are prefixed with `{CRYPT}`.
  - `bcrypt`, `ldap_bcrypt`: The bcrypt hashing algorithm. 
    The LDAP variant is prefixed with `{CRYPT}`. 
@@ -75,3 +75,9 @@ Protocol specific hashes:
 
  - `nthash`: Required for NTLM authentication.
  - `scram`: Required for the SCRAM authentication. 
+
+Application specific hashes:
+ - `dovecot_scram_sha1`, `dovecot_scram_sha256`:
+   Dovecot specific hash for SCRAM authentication.
+   They are considered modern algorithms.
+   

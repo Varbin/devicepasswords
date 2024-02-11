@@ -2,6 +2,8 @@
 """
 Password hasher.
 """
+from devicepasswords import hashes as _
+
 from passlib.context import CryptContext
 
 
@@ -14,5 +16,7 @@ hasher = CryptContext([
     "ldap_bcrypt", "roundup_plaintext",
     "scram", "nthash",
     "bcrypt", "scrypt", "argon2",
-    "md5_crypt", "sha1_crypt", "sha256_crypt", "sha512_crypt"
+    "md5_crypt", "sha1_crypt", "sha256_crypt", "sha512_crypt",
+    # Custom implementations
+    "dovecot_scram_sha1", "dovecot_scram_sha256"
 ])

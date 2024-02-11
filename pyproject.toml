@@ -47,6 +47,11 @@ dependencies = [
 ]
 dynamic = ["version"]
 
+[project.optional-dependencies]
+tests = [
+    "pytest",
+]
+
 [project.urls]
 Homepage = "https://github.com/varbin/devicepasswords"
 Documentation = "https://devicepasswords.readthedocs.io/"
@@ -56,9 +61,10 @@ Issues = "https://github.com/varbin/devicepasswords/issues"
 [tool.setuptools]
 packages = [
     "devicepasswords",
+    "devicepasswords.hashes",
     "devicepasswords.migrations",
     "devicepasswords.static",
-    "devicepasswords.templates"
+    "devicepasswords.templates",
 ]
 
 [tool.setuptools_scm]
