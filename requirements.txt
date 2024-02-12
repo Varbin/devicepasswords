@@ -1,6 +1,6 @@
 Flask==3.0.2
 Flask-SQLAlchemy==3.1.1
-Flask-Alembic==2.0.1
+Flask-Alembic==3.0.0
 python-jose==3.3.0
 Flask-Session==0.6.0
 passlib==1.7.4
@@ -9,7 +9,7 @@ psycopg2-binary==2.9.9
 PyMySQL==1.1.0
 pymssql==2.2.11
 gunicorn==21.2.0
-uvicorn==0.27.0.post1
+uvicorn==0.27.1
 asgiref==3.7.2
 aiohttp==3.9.3
 ## The following requirements were added by pip freeze:
@@ -20,7 +20,7 @@ argon2-cffi-bindings==21.2.0
 attrs==23.2.0
 blinker==1.7.0
 Brotli==1.1.0
-cachelib==0.10.2
+cachelib==0.12.0
 cffi==1.16.0
 click==8.1.7
 cryptography==42.0.2
@@ -40,7 +40,7 @@ pycares==4.4.0
 pycparser==2.21
 rsa==4.9
 six==1.16.0
-SQLAlchemy==2.0.25
+SQLAlchemy==2.0.26
 typing_extensions==4.9.0
 Werkzeug==3.0.1
 yarl==1.9.4
