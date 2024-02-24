@@ -25,11 +25,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@8e5442c4ef9f78752691e2d8f8d19755c6f78e81
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           labels:
@@ -37,14 +37,14 @@ jobs:
 
       - name: Log in to GHCR
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
+        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.action }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and publish Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@4a13e500e55cf31b7a5d59a38ab2040ab0f42f56
         with:
           context: .
           push: ${{ github.event_name != 'pull_request' }}
