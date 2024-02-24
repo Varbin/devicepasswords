@@ -1,4 +1,4 @@
-FROM python:3.12-slim-bookworm@sha256:4e7d6f2672bd4a834eac99973679c7e73fbcd475d439b7569512bf478ed39c78
+FROM python:3.12-slim-bookworm@sha256:5c73034c2bc151596ee0f1335610735162ee2b148816710706afec4757ad5b1e
 
 WORKDIR /opt
 
