@@ -16,6 +16,8 @@ on:
 permissions:
   contents: read
   packages: write
+  # Required for keyless signatures
+  id-token: write
 
 env:
   REGISTRY: ghcr.io
