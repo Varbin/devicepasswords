@@ -40,7 +40,7 @@ pycares==4.4.0
 pycparser==2.21
 rsa==4.9
 six==1.16.0
-SQLAlchemy==2.0.29
+SQLAlchemy==2.0.30
 typing_extensions==4.11.0
 Werkzeug==3.0.3
 yarl==1.9.4
