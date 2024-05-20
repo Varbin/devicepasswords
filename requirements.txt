@@ -37,7 +37,7 @@ multidict==6.0.5
 packaging==24.0
 pyasn1==0.6.0
 pycares==4.4.0
-pycparser==2.21
+pycparser==2.22
 rsa==4.9
 six==1.16.0
 SQLAlchemy==2.0.30
