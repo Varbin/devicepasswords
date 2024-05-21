@@ -6,7 +6,7 @@ Flask-Session==0.8.0
 passlib==1.7.4
 argon2-cffi==23.1.0
 psycopg2-binary==2.9.9
-PyMySQL==1.1.0
+PyMySQL==1.1.1
 pymssql==2.3.0
 gunicorn==22.0.0
 uvicorn==0.29.0
