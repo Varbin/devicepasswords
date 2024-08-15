@@ -9,7 +9,7 @@ psycopg2-binary==2.9.9
 PyMySQL==1.1.1
 pymssql==2.3.0
 gunicorn==23.0.0
-uvicorn==0.30.3
+uvicorn==0.30.6
 asgiref==3.7.2
 aiohttp==3.10.2
 ## The following requirements were added by pip freeze:
