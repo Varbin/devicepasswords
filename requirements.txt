@@ -23,7 +23,7 @@ Brotli==1.1.0
 cachelib==0.13.0
 cffi==1.17.0
 click==8.1.7
-cryptography==43.0.0
+cryptography==43.0.1
 ecdsa==0.19.0
 frozenlist==1.4.1
 greenlet==3.0.3
